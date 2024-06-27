@@ -1,0 +1,77 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using Core.Features.Enquiries
+
+<div class="alert @(message?.StartsWith("Error") == true ? "alert-danger" : "alert-success")" hidden="@string.IsNullOrEmpty(message)">
+    @message
+</div>
+
+<EditForm FormName="ContactForm" Enhance="true" Model="Model" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator /> <!-- Required for validation -->
+    <div class="mb-3">
+        <label for="Name" class="form-label">Name</label>
+        <InputText @bind-Value="Model!.Name" class="form-control" id="Name" />
+        <ValidationMessage For="() => Model.Name" /> <!-- Display validation messages for this property -->
+    </div>
+
+    <div class="mb-3">
+        <label for="Email" class="form-label">Email address</label>
+        <InputText @bind-Value="Model!.Email" class="form-control" id="Email" />
+        <ValidationMessage For="() => Model.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label for="Message" class="form-label">Message</label>
+        <InputTextArea @bind-Value="Model!.Message" class="form-control" id="Message" />
+        <ValidationMessage For="() => Model.Message" />
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    FormModel? Model { get; set; }
+
+    string? message;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private async Task HandleValidSubmit(EditContext context)
+    {
+        // TODO: show loading indicator
+
+        var result = await Mediator.Send(new CreateEnquiry("Contact Form")
+            {
+                Name = Model!.Name,
+                Email = Model!.Email,
+                Subject = "General Inquiry",
+                Message = Model!.Message
+            });
+
+        // TODO: improve feedback
+        if (result.IsSuccess)
+        {
+            message = "Your email has been sent successfully.";
+            Model = new FormModel();
+        }
+        else
+        {
+            message = "Error";
+        }
+    }
+
+    class FormModel
+    {
+        [Required(ErrorMessage = "Please enter your name")]
+        public string Name { get; set; } = null!;
+
+        [Required(ErrorMessage = "Please enter your email address")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+        public string Email { get; set; } = null!;
+
+        [Required(ErrorMessage = "Please enter a message")]
+        public string Message { get; set; } = null!;
+    }
+}
