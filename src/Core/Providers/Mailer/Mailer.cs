@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Core.Utilities;
+using MailKit.Net.Smtp;
+using Microsoft.Extensions.Configuration;
 using MimeKit;
 
 namespace Core.Providers.Mailer;

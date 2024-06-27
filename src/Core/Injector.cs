@@ -1,4 +1,5 @@
-﻿using Core.Providers.Mailer;
+﻿using System.Reflection;
+using Core.Providers.Mailer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,10 @@ public static class Injector
     {
         // Register Providers
         services.AddScoped<IMailer, Mailer>();
+
+        // Register Features
+        var assemblyToScan = Assembly.GetExecutingAssembly();
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assemblyToScan));
 
         return services;
     }
