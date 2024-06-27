@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Core.Providers.Mailer;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Core;
@@ -14,7 +15,8 @@ public static class Injector
     /// <returns></returns>
     public static IServiceCollection AddApplicationCore(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
-        // Register services
+        // Register Providers
+        services.AddScoped<IMailer, Mailer>();
 
         return services;
     }
