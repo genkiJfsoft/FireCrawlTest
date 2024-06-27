@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BC38F300-D736-46B5-AA3C-C74F3EA4BD7B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "src\Core\Core.csproj", "{C82B0EA9-D46E-4621-8B82-CE17F13C5C3F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web", "src\Web\Web.csproj", "{FF286E51-B0E2-4B32-B856-CA4EB56BCEBA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{80B858DC-2291-4382-8EF9-684825A2C7AB}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C82B0EA9-D46E-4621-8B82-CE17F13C5C3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C82B0EA9-D46E-4621-8B82-CE17F13C5C3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C82B0EA9-D46E-4621-8B82-CE17F13C5C3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C82B0EA9-D46E-4621-8B82-CE17F13C5C3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF286E51-B0E2-4B32-B856-CA4EB56BCEBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF286E51-B0E2-4B32-B856-CA4EB56BCEBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF286E51-B0E2-4B32-B856-CA4EB56BCEBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF286E51-B0E2-4B32-B856-CA4EB56BCEBA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C82B0EA9-D46E-4621-8B82-CE17F13C5C3F} = {BC38F300-D736-46B5-AA3C-C74F3EA4BD7B}
+		{FF286E51-B0E2-4B32-B856-CA4EB56BCEBA} = {BC38F300-D736-46B5-AA3C-C74F3EA4BD7B}
+	EndGlobalSection
+EndGlobal
