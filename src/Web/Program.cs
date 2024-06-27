@@ -1,7 +1,9 @@
 using Core;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Serilog.Events;
 using Web.Components;
+using Web.Endpoints.Shared;
 
 Log.Logger = new LoggerConfiguration()
   .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -27,6 +29,9 @@ try
 
     builder.Services.AddApplicationCore(builder.Configuration, builder.Environment.IsDevelopment());
 
+    builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
+    builder.Services.AddEndpointsApiExplorer();
+
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 
@@ -48,6 +53,8 @@ try
 
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode();
+
+    app.MapApiEndpoints();
 
     app.Run();
 }

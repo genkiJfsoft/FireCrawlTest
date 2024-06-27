@@ -6,9 +6,12 @@
   <ItemGroup>
   </ItemGroup>
   <ItemGroup>
+    <PackageVersion Include="Ardalis.GuardClauses" Version="4.5.0" />
     <PackageVersion Include="Ardalis.Result" Version="9.1.0" />
+    <PackageVersion Include="Ardalis.Result.AspNetCore" Version="9.1.0" />
     <PackageVersion Include="Mailkit" Version="4.6.0" />
     <PackageVersion Include="MediatR" Version="12.3.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.6" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.6" />
