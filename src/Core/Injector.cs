@@ -1,7 +1,9 @@
 ﻿using System.Reflection;
 using Core.Providers.Data;
+using Core.Providers.Data.Interceptors;
 using Core.Providers.Mailer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,7 @@ public static class Injector
     public static IServiceCollection AddApplicationCore(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
         // Register Providers
+        services.AddSingleton(TimeProvider.System);
         services.AddDataContext(configuration, isDevelopment);
         services.AddScoped<IMailer, Mailer>();
 
@@ -35,8 +38,11 @@ public static class Injector
         string? connectionString = configuration.GetConnectionString(DataContext.ConnectionStringName);
         ArgumentException.ThrowIfNullOrEmpty(connectionString);
         var serverVersion = ServerVersion.AutoDetect(connectionString);
-        services.AddDbContext<DataContext>(options =>
+
+        services.AddScoped<ISaveChangesInterceptor, EntityTimestampableInterceptor>();
+        services.AddDbContext<DataContext>((sp, options) =>
         {
+            options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
             options.UseMySql(connectionString, serverVersion);
             if (isDevelopment)
             {

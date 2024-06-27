@@ -1,0 +1,60 @@
+﻿@page "/collections"
+@attribute [StreamRendering]
+
+@using Core.Features.Collections
+
+<PageTitle>Collections</PageTitle>
+
+<h3>Collections</h3>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="card card-body">
+            <AddCollectionForm OnAdded="LoadCollections" />
+        </div>
+    </div>
+</div>
+
+@if (collections == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Descriptions</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var collection in collections)
+            {
+                <tr>
+                    <td>
+                        <NavLink href="@($"/collections/{collection.PublicId}")">@collection.Title</NavLink>
+                    </td>
+                    <td>@collection.Description</td>
+                    <td>@collection.CreatedAt.ToLocalTime().ToString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<CollectionDto>? collections;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCollections();
+    }
+
+    protected async Task LoadCollections()
+    {
+        var result = await Mediator.Send(new GetCollections());
+        collections = result.Value;
+    }
+}
