@@ -37,13 +37,12 @@ public static class Injector
     {
         string? connectionString = configuration.GetConnectionString(DataContext.ConnectionStringName);
         ArgumentException.ThrowIfNullOrEmpty(connectionString);
-        var serverVersion = ServerVersion.AutoDetect(connectionString);
 
         services.AddScoped<ISaveChangesInterceptor, EntityTimestampableInterceptor>();
         services.AddDbContext<DataContext>((sp, options) =>
         {
             options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
-            options.UseMySql(connectionString, serverVersion);
+            options.UseSqlServer(connectionString);
             if (isDevelopment)
             {
                 options.LogTo(Console.WriteLine, LogLevel.Information)
