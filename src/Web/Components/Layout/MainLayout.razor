@@ -1,23 +1,51 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="bb-page">
+    <Sidebar @ref="sidebar"
+        IconName="IconName.CodeSquare"
+        Title="Dev List"
+        DataProvider="SidebarDataProvider" />
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-            <NavLink href="contact">
-                Contact
-            </NavLink>
+        <div class="bb-top-row px-4 gap-3 d-flex justify-content-end">
+            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+            <NavLink href="contact">Contact</NavLink>
         </div>
 
         <article class="content px-4">
-            @Body
+            <div class="py-2">@Body</div>
         </article>
     </main>
+
 </div>
+
+@code {
+    Sidebar? sidebar;
+
+    IEnumerable<NavItem>? navItems;
+
+    private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
+    {
+        if (navItems is null)
+        {
+            navItems = GetNavItems();
+        }
+
+        return await Task.FromResult(request.ApplyTo(navItems));
+    }
+
+    private IEnumerable<NavItem> GetNavItems()
+    {
+        navItems = new List<NavItem>
+        {
+            new NavItem { Id = "1", Href = "/", IconName = IconName.HouseDoorFill, Text = "Home", Match=NavLinkMatch.All},
+            new NavItem { Id = "2", Href = "/collections", IconName = IconName.CardList, Text = "Collections"},
+            new NavItem { Id = "3", Href = "/weather", IconName = IconName.Table, Text = "Fetch Data"},
+        };
+
+        return navItems;
+    }
+}
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.

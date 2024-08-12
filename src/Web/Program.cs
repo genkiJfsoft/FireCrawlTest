@@ -32,6 +32,8 @@ try
     builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
     builder.Services.AddEndpointsApiExplorer();
 
+    builder.Services.AddBlazorBootstrap();
+
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 
