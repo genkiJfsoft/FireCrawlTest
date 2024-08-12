@@ -1,6 +1,7 @@
 ﻿@page "/collections"
 @attribute [StreamRendering]
 
+@using Ardalis.Result
 @using Core.Features.Collections
 
 <PageTitle>Collections</PageTitle>
@@ -10,51 +11,41 @@
 <div class="row mb-3">
     <div class="col-md-6">
         <div class="card card-body">
-            <AddCollectionForm OnAdded="LoadCollections" />
+            <AddCollectionForm />
         </div>
     </div>
 </div>
 
-@if (collections == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Descriptions</th>
-                <th>Created At</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var collection in collections)
-            {
-                <tr>
-                    <td>
-                        <NavLink href="@($"/collections/{collection.PublicId}")">@collection.Title</NavLink>
-                    </td>
-                    <td>@collection.Description</td>
-                    <td>@collection.CreatedAt.ToLocalTime().ToString()</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+
+<Grid TItem="CollectionDto"
+    Class="table table-hover table-bordered table-striped"
+    DataProvider="CollectionsDataProvider"
+    AllowPaging="true"
+    PageSize="5"
+    Responsive="true">
+
+    <GridColumn TItem="CollectionDto" HeaderText="Title" PropertyName="Title">
+        <NavLink href="@($"/collections/{@context.PublicId}")">@context.Title</NavLink>
+    </GridColumn>
+
+    <GridColumn TItem="CollectionDto" HeaderText="Description" PropertyName="Description">
+        @context.Description
+    </GridColumn>
+
+    <GridColumn TItem="CollectionDto" HeaderText="Created At" PropertyName="CreatedAt">
+        @context.CreatedAt.ToLocalTime()
+    </GridColumn>
+</Grid>
 
 @code {
-    private List<CollectionDto>? collections;
-
-    protected override async Task OnInitializedAsync()
+    private async Task<GridDataProviderResult<CollectionDto>> CollectionsDataProvider(GridDataProviderRequest<CollectionDto> request)
     {
-        await LoadCollections();
-    }
+        var result = await Mediator.Send(new GetCollections()
+        {
+            Page = request.PageNumber,
+            PerPage = request.PageSize
+        });
 
-    protected async Task LoadCollections()
-    {
-        var result = await Mediator.Send(new GetCollections());
-        collections = result.Value;
+        return await Task.FromResult(new GridDataProviderResult<CollectionDto> { Data = result.Value, TotalCount = (int)result.PagedInfo.TotalRecords });
     }
 }

@@ -16,7 +16,7 @@ public class Collections : EndpointGroup
 
     public async Task<IResult> GetCollectionsAction(ISender sender)
     {
-        var result = await sender.Send(new GetCollections());
+        var result = await sender.Send(new GetCollections() { PerPage = 0 });
         return result.ToMinimalApiResult();
     }
 
