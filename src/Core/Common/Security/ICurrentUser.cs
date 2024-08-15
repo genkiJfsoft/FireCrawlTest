@@ -1,4 +1,4 @@
-﻿namespace Core.Common.Data;
+﻿namespace Core.Common.Security;
 
 /// <summary>
 /// Currently authenticated user data holder

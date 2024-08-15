@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Core.Common.Data;
 using Core.Common.Exceptions;
 using Core.Identities.Data;
 using MediatR;

@@ -1,11 +1,11 @@
 using Core;
-using Core.Common.Data;
+using Core.Common.Security;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Serilog.Events;
 using Web.Components;
-using Web.Data;
 using Web.Endpoints.Common;
+using Web.Security;
 
 Log.Logger = new LoggerConfiguration()
   .MinimumLevel.Override("Microsoft", LogEventLevel.Information)

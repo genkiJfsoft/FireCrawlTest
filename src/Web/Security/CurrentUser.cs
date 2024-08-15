@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
-using Core.Common.Data;
+using Core.Common.Security;
 
-namespace Web.Data;
+namespace Web.Security;
 
 public class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICurrentUser
 {
