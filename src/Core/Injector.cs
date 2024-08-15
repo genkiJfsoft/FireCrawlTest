@@ -1,7 +1,11 @@
 ﻿using System.Reflection;
-using Core.Providers.Data;
-using Core.Providers.Data.Interceptors;
-using Core.Providers.Mailer;
+using Core.Common.Data;
+using Core.Common.Exceptions;
+using Core.Common.Mailer;
+using Core.Common.Security;
+using Core.Identities.Data;
+using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -22,23 +26,31 @@ public static class Injector
     public static IServiceCollection AddApplicationCore(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
         // Register Providers
+
         services.AddSingleton(TimeProvider.System);
-        services.AddDataContext(configuration, isDevelopment);
+        services.AddPersistenceProvider(configuration, isDevelopment);
         services.AddScoped<IMailer, Mailer>();
+
+        services.AddIdentityAuth();
 
         // Register Features
         var assemblyToScan = Assembly.GetExecutingAssembly();
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assemblyToScan));
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(assemblyToScan);
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionPipelineBehavior<,>));
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(AuthorizationPipelineBehavior<,>));
+        });
 
         return services;
     }
 
-    private static IServiceCollection AddDataContext(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
+    private static void AddPersistenceProvider(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
         string? connectionString = configuration.GetConnectionString(DataContext.ConnectionStringName);
         ArgumentException.ThrowIfNullOrEmpty(connectionString);
 
-        services.AddScoped<ISaveChangesInterceptor, EntityTimestampableInterceptor>();
+        services.AddScoped<ISaveChangesInterceptor, TimestampableDataInterceptor>();
         services.AddDbContext<DataContext>((sp, options) =>
         {
             options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
@@ -50,6 +62,27 @@ public static class Injector
                     .EnableDetailedErrors();
             }
         });
-        return services;
+    }
+
+    private static void AddIdentityAuth(this IServiceCollection services)
+    {
+        services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = IdentityConstants.ApplicationScheme;
+            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        }).AddIdentityCookies();
+
+        services.AddIdentityCore<User>(options => options.SignIn.RequireConfirmedAccount = true)
+            .AddSignInManager()
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<DataContext>()
+            .AddDefaultTokenProviders();
+
+        services.AddAuthorizationCore(options =>
+        {
+            // Register Policies
+            options.AddPolicy(KnownPolicies.CanPurge, policy => policy.RequireRole(KnownRoles.Administrator));
+        });
+
     }
 }

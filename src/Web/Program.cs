@@ -1,9 +1,11 @@
 using Core;
+using Core.Common.Data;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Serilog.Events;
 using Web.Components;
-using Web.Endpoints.Shared;
+using Web.Data;
+using Web.Endpoints.Common;
 
 Log.Logger = new LoggerConfiguration()
   .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -19,7 +21,6 @@ try
 
     // Add services to the container.
 
-
     // Register Logger
     builder.Services.AddSerilog((s, c) => c
         .ReadFrom.Configuration(builder.Configuration)
@@ -28,6 +29,10 @@ try
         .WriteTo.Console());
 
     builder.Services.AddApplicationCore(builder.Configuration, builder.Environment.IsDevelopment());
+
+    builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+
+    builder.Services.AddHttpContextAccessor();
 
     builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
     builder.Services.AddEndpointsApiExplorer();
@@ -39,9 +44,14 @@ try
 
     var app = builder.Build();
 
-    // Configure the HTTP request pipeline.
-    if (!app.Environment.IsDevelopment())
+    if (app.Environment.IsDevelopment())
     {
+        // Do something
+    }
+    else
+    {
+        // Configure the HTTP request pipeline.
+
         app.UseExceptionHandler("/Error", createScopeForErrors: true);
         // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
         app.UseHsts();

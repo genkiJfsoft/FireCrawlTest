@@ -7,10 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Identities\Constants\**" />
+    <EmbeddedResource Remove="Identities\Constants\**" />
+    <None Remove="Identities\Constants\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses" />
     <PackageReference Include="Ardalis.Result" />
     <PackageReference Include="Mailkit" />
     <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
@@ -25,11 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Assets\MailTemplates\*.htm" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Providers\Data\Migrations\" />
+    <EmbeddedResource Include="Enquiries\Assets\EnquiryMailTemplate.htm" />
   </ItemGroup>
 
 </Project>

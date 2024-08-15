@@ -1,0 +1,51 @@
+﻿@page "/collections"
+@attribute [StreamRendering]
+
+@using Ardalis.Result
+
+<PageTitle>Collections</PageTitle>
+
+<h3>Collections</h3>
+
+<AuthorizeView>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card card-body">
+                <AddCollectionForm />
+            </div>
+        </div>
+    </div>
+</AuthorizeView>
+
+<Grid TItem="CollectionData"
+    Class="table table-hover table-bordered table-striped"
+    DataProvider="CollectionsDataProvider"
+    AllowPaging="true"
+    PageSize="5"
+    Responsive="true">
+
+    <GridColumn TItem="CollectionData" HeaderText="Title" PropertyName="Title">
+        <NavLink href="@($"/collections/{@context.PublicId}")">@context.Title</NavLink>
+    </GridColumn>
+
+    <GridColumn TItem="CollectionData" HeaderText="Description" PropertyName="Description">
+        @context.Description
+    </GridColumn>
+
+    <GridColumn TItem="CollectionData" HeaderText="Created At" PropertyName="CreatedAt">
+        @context.CreatedAt.ToLocalTime()
+    </GridColumn>
+</Grid>
+
+@code {
+    private async Task<GridDataProviderResult<CollectionData>> CollectionsDataProvider(GridDataProviderRequest<CollectionData> request)
+    {
+        var result = await Mediator.Send(new GetCollections()
+        {
+            Page = request.PageNumber,
+            PerPage = request.PageSize
+        });
+
+        return await Task.FromResult(new GridDataProviderResult<CollectionData> { Data = result.Value, TotalCount = (int)result.PagedInfo.TotalRecords });
+    }
+}

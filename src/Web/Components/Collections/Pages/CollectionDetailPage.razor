@@ -1,0 +1,68 @@
+﻿@page "/collections/{collectionId}"
+
+@using Core.Collections.Features;
+@using Core.Collections.Data;
+
+<PageTitle>Collection</PageTitle>
+
+
+@if (collection == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h4>@collection.Title - Resources</h4>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card card-body">
+                <AddResourceForm CollectionId="collection.Id" OnAdded="LoadCollectionData" />
+            </div>
+        </div>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Notes</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var resource in collection.Resources)
+            {
+                <tr>
+                    <td>@resource.Title</td>
+                    <td>@resource.Notes</td>
+                    <td>
+                        <a href="@resource.LinkToUrl" target="_blank">@resource.LinkToUrl</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    public string CollectionId { get; set; } = null!;
+
+    private CollectionData? collection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCollectionData();
+    }
+
+    protected async Task LoadCollectionData()
+    {
+        var result = await Mediator.Send(new GetCollection(CollectionId));
+
+        if (result.IsSuccess)
+        {
+            collection = result.Value;
+        }
+    }
+}
