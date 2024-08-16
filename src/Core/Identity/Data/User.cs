@@ -1,7 +1,7 @@
 ﻿using Core.Common.Data;
 using Microsoft.AspNetCore.Identity;
 
-namespace Core.Identities.Data;
+namespace Core.Identity.Data;
 
 public class User : IdentityUser, IDataModel, ITimestampableModel
 {

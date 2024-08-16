@@ -3,7 +3,7 @@
 /// <summary>
 /// Currently authenticated user data holder
 /// </summary>
-public interface ICurrentUser
+public interface IUserPayload
 {
     string? UserId { get; }
 }

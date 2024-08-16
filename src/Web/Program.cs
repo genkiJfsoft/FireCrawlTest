@@ -1,9 +1,12 @@
 using Core;
+using Core.Common.Data;
 using Core.Common.Security;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Serilog.Events;
 using Web.Components;
+using Web.Components.Account;
 using Web.Endpoints.Common;
 using Web.Security;
 
@@ -21,6 +24,14 @@ try
 
     // Add services to the container.
 
+    builder.Services.AddCascadingAuthenticationState();
+    builder.Services.AddScoped<IdentityUserAccessor>();
+    builder.Services.AddScoped<IdentityRedirectManager>();
+    builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IUserPayload, UserPayload>();
+
     // Register Logger
     builder.Services.AddSerilog((s, c) => c
         .ReadFrom.Configuration(builder.Configuration)
@@ -30,9 +41,10 @@ try
 
     builder.Services.AddApplicationCore(builder.Configuration, builder.Environment.IsDevelopment());
 
-    builder.Services.AddScoped<ICurrentUser, CurrentUser>();
-
-    builder.Services.AddHttpContextAccessor();
+    builder.Services.ConfigureApplicationCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+    });
 
     builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
     builder.Services.AddEndpointsApiExplorer();
@@ -46,7 +58,9 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        // Do something
+        // Seed data
+        using var scope = app.Services.CreateScope();
+        await scope.ServiceProvider.SeedDataAsync();
     }
     else
     {
@@ -65,6 +79,9 @@ try
 
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode();
+
+    // Add additional endpoints required by the Identity /Account Razor components.
+    app.MapAdditionalIdentityEndpoints();
 
     app.MapApiEndpoints();
 

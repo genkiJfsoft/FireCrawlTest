@@ -3,7 +3,8 @@ using Core.Common.Data;
 using Core.Common.Exceptions;
 using Core.Common.Mailer;
 using Core.Common.Security;
-using Core.Identities.Data;
+using Core.Identity.Data;
+using Core.Identity.Services;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ public static class Injector
         // Register Providers
 
         services.AddSingleton(TimeProvider.System);
-        services.AddPersistenceProvider(configuration, isDevelopment);
+        services.AddDataProvider(configuration, isDevelopment);
         services.AddScoped<IMailer, Mailer>();
 
         services.AddIdentityAuth();
@@ -45,7 +46,7 @@ public static class Injector
         return services;
     }
 
-    private static void AddPersistenceProvider(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
+    private static void AddDataProvider(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
         string? connectionString = configuration.GetConnectionString(DataContext.ConnectionStringName);
         ArgumentException.ThrowIfNullOrEmpty(connectionString);
@@ -62,27 +63,19 @@ public static class Injector
                     .EnableDetailedErrors();
             }
         });
+
+        services.AddScoped<DataContextInitializer>();
     }
 
     private static void AddIdentityAuth(this IServiceCollection services)
     {
-        services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = IdentityConstants.ApplicationScheme;
-            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-        }).AddIdentityCookies();
-
-        services.AddIdentityCore<User>(options => options.SignIn.RequireConfirmedAccount = true)
-            .AddSignInManager()
+        services.AddDefaultIdentity<User>()
             .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<DataContext>()
-            .AddDefaultTokenProviders();
+            .AddEntityFrameworkStores<DataContext>();
 
-        services.AddAuthorizationCore(options =>
-        {
-            // Register Policies
-            options.AddPolicy(KnownPolicies.CanPurge, policy => policy.RequireRole(KnownRoles.Administrator));
-        });
+        services.AddAuthorization(options =>
+            options.AddPolicy(KnownPolicies.CanPurge, policy => policy.RequireRole(KnownRoles.Administrator)));
 
+        services.AddScoped<IEmailSender<User>, IdentityMailer>();
     }
 }

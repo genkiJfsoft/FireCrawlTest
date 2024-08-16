@@ -1,15 +1,37 @@
 ﻿@inherits LayoutComponentBase
 
+@inject NavigationManager NavigationManager
+
 <div class="bb-page">
-    <Sidebar @ref="sidebar"
-        IconName="IconName.CodeSquare"
-        Title="Dev List"
-        DataProvider="SidebarDataProvider" />
+    <MainSidebar />
 
     <main>
         <div class="bb-top-row px-4 gap-3 d-flex justify-content-end">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-            <NavLink href="contact">Contact</NavLink>
+            <a href="https://docs.microsoft.com/aspnet/" target="_blank" class="btn btn-link">About</a>
+            <NavLink href="contact" class="btn btn-link">Contact</NavLink>
+
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink href="Account/Manage" class="btn btn-link">
+                       @context.User.Identity?.Name
+                    </NavLink>
+                    <form action="Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="btn btn-link">
+                            Logout
+                        </button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink href="Account/Register" class="btn btn-link">
+                        Register
+                    </NavLink>
+                    <NavLink href="Account/Login" class="btn btn-link">
+                        Login
+                    </NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
 
         <article class="content px-4">
@@ -20,31 +42,28 @@
 </div>
 
 @code {
-    Sidebar? sidebar;
+    private string? currentUrl;
 
-    IEnumerable<NavItem>? navItems;
-
-    private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
+    protected override void OnInitialized()
     {
-        if (navItems is null)
-        {
-            navItems = GetNavItems();
-        }
-
-        return await Task.FromResult(request.ApplyTo(navItems));
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private IEnumerable<NavItem> GetNavItems()
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        navItems = new List<NavItem>
-        {
-            new NavItem { Id = "1", Href = "/", IconName = IconName.HouseDoorFill, Text = "Home", Match=NavLinkMatch.All},
-            new NavItem { Id = "2", Href = "/collections", IconName = IconName.CardList, Text = "Collections"},
-        };
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
 
-        return navItems;
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
+
+<Preload LoadingText="Loading..." />
+<Toasts class="p-3" AutoHide="true" Delay="4000" Placement="ToastsPlacement.TopRight" />
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.

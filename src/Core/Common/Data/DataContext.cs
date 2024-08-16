@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using Core.Collections.Data;
-using Core.Identities.Data;
+using Core.Identity.Data;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 

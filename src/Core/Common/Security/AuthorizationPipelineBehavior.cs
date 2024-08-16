@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using Core.Common.Exceptions;
-using Core.Identities.Data;
+using Core.Identity.Data;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,13 +10,13 @@ namespace Core.Common.Security;
 public class AuthorizationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly ICurrentUser _currentUser;
+    private readonly IUserPayload _currentUser;
     private readonly UserManager<User> _userManager;
     private readonly IUserClaimsPrincipalFactory<User> _userClaimsPrincipalFactory;
     private readonly IAuthorizationService _authorizationService;
 
     public AuthorizationPipelineBehavior(
-        ICurrentUser currentUser,
+        IUserPayload currentUser,
         UserManager<User> userManager,
         IUserClaimsPrincipalFactory<User> userClaimsPrincipalFactory,
         IAuthorizationService authorizationService)
