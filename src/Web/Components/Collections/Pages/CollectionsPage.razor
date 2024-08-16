@@ -2,50 +2,106 @@
 @attribute [StreamRendering]
 
 @using Ardalis.Result
+@using Core.Common.Data
+@inject NavigationManager NavigationManager
 
 <PageTitle>Collections</PageTitle>
 
 <h3>Collections</h3>
 
 <AuthorizeView>
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <div class="card card-body">
-                <AddCollectionForm />
-            </div>
-        </div>
-    </div>
+    <Button Color="ButtonColor.Primary" @onclick="ShowAddModal" class="mb-3">Add</Button>
+
+    <Modal @ref="modal" title="Add new Collection" IsVerticallyCentered="true" IsScrollable="true">
+        <BodyTemplate>
+            <AddCollectionForm OnAdded="OnAddedResourceCallbackHandler" />
+        </BodyTemplate>
+    </Modal>
 </AuthorizeView>
 
-<Grid TItem="CollectionData"
-    Class="table table-hover table-bordered table-striped"
-    DataProvider="CollectionsDataProvider"
-    AllowPaging="true"
-    PageSize="5"
-    Responsive="true">
+@if (paginatedCollections == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row g-3">
+    @foreach (var collection in paginatedCollections.Items)
+    {
+        var collectionHref = $"/collections/{collection.PublicId}";
 
-    <GridColumn TItem="CollectionData" HeaderText="Title" PropertyName="Title">
-        <NavLink href="@($"/collections/{@context.PublicId}")">@context.Title</NavLink>
-    </GridColumn>
+        <div class="col-12">
+            <Card>
+                <CardBody>
+                    <NavLink href="@collectionHref" class="text-decoration-none text-dark"><CardTitle>@collection.Title</CardTitle></NavLink>
+                    <CardText>@collection.Description</CardText>
+                </CardBody>
+                <CardFooter Class="d-flex justify-content-between align-items-center">
+                    <div><CardText Class="small text-muted">@collection.LastModifiedAt?.ToLocalTime().ToString("G")</CardText></div>
+                    <div><Button Color="ButtonColor.Light" To="@collectionHref" Type="ButtonType.Link" Size="ButtonSize.Small">View</Button></div>
+                </CardFooter>
+            </Card>
+        </div>
+    }
+    </div>
 
-    <GridColumn TItem="CollectionData" HeaderText="Description" PropertyName="Description">
-        @context.Description
-    </GridColumn>
-
-    <GridColumn TItem="CollectionData" HeaderText="Created At" PropertyName="CreatedAt">
-        @context.CreatedAt.ToLocalTime()
-    </GridColumn>
-</Grid>
+    <div class="mt-3">
+        <Pagination ActivePageNumber="paginatedCollections.PageNumber"
+            TotalPages="paginatedCollections.TotalPages"
+            PageChanged="OnPaginationPageChanged"
+            DisplayPages="5"
+            FirstLinkIcon="IconName.ChevronDoubleLeft"
+            PreviousLinkIcon="IconName.ChevronLeft"
+            NextLinkIcon="IconName.ChevronRight"
+            LastLinkIcon="IconName.ChevronDoubleRight" />
+    </div>
+}
 
 @code {
-    private async Task<GridDataProviderResult<CollectionData>> CollectionsDataProvider(GridDataProviderRequest<CollectionData> request)
+    [SupplyParameterFromQuery(Name = "page")]
+    private int? PageNumber { get; set; }
+
+    private Modal modal = default!;
+
+    private PaginatedList<CollectionData>? paginatedCollections;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadCollections(PageNumber ?? 1);
+    }
+
+    private async Task LoadCollections(int page)
     {
         var result = await Mediator.Send(new GetCollections()
         {
-            Page = request.PageNumber,
-            PerPage = request.PageSize
+            Page = page,
+            PerPage = 10
         });
 
-        return await Task.FromResult(new GridDataProviderResult<CollectionData> { Data = result.Value, TotalCount = (int)result.PagedInfo.TotalRecords });
+        if (result.IsSuccess)
+        {
+            paginatedCollections = result.Value;
+        }
+    }
+
+    private async Task ShowAddModal()
+    {
+        await modal.ShowAsync();
+    }
+
+    private async Task OnAddedResourceCallbackHandler()
+    {
+        await modal.HideAsync();
+        ToastService.Notify(new(ToastType.Success, $"Added new Collection successfully."));
+        NavigateToPageNumber(1);
+    }
+
+    private void OnPaginationPageChanged(int page) => NavigateToPageNumber(page);
+
+    private void NavigateToPageNumber(int page)
+    {
+        PageNumber = page;
+        var pageUrl = NavigationManager.GetUriWithQueryParameter("page", PageNumber);
+        NavigationManager.NavigateTo(pageUrl);
     }
 }
