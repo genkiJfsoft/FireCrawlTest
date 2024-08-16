@@ -12,9 +12,6 @@
 
             <AuthorizeView>
                 <Authorized>
-                    <NavLink href="Account/Manage" class="btn btn-link">
-                       @context.User.Identity?.Name
-                    </NavLink>
                     <form action="Account/Logout" method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
