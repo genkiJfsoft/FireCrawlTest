@@ -9,7 +9,7 @@ The goal of this project is to demonstrate web applications built with recent AS
 Before you begin, ensure you have the following software installed:
 
 - .NET SDK
-- MySQL
+- SQL Server
 - Visual Studio
 
 ## Setup

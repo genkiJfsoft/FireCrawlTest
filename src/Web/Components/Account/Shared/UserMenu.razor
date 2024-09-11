@@ -1,0 +1,59 @@
+﻿@inject NavigationManager NavigationManager
+
+<AuthorizeView>
+    <Authorized>
+        <div class="dropdown">
+            <a class="btn btn-light dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                @(context.User.Identity?.Name)
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end position-absolute">
+                <li>
+                    <NavLink href="Account/Manage" class="dropdown-item">
+                        Account
+                    </NavLink>
+                </li>
+                <li>
+                    <NavLink href="Portal/Dashboard" class="dropdown-item">
+                        Dashboard
+                    </NavLink>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form action="Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="dropdown-item">
+                            Logout
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <NavLink href="Account/Login" class="btn btn-light">
+            Login
+        </NavLink>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

@@ -1,0 +1,11 @@
+﻿#authPage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+    #authPage .container {
+        padding-top: 50px;
+        padding-bottom: 50px;
+        max-width: 600px;
+    }

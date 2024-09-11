@@ -1,0 +1,86 @@
+﻿@page "/Portal/Manage/Collections"
+@attribute [StreamRendering]
+
+@using Core.Collections.Data
+@using Core.Collections.Features
+@using Core.Common.Data
+@inject NavigationManager NavigationManager
+
+<PageTitle>Collections</PageTitle>
+
+<div class="container-lg">
+    <div>
+        <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
+    </div>
+
+    <h4>Collections</h4>
+
+    <Button Color="ButtonColor.Primary" @onclick="ShowAddModal" class="mb-3">Add</Button>
+
+    <Grid @ref="grid"
+          TItem="CollectionData"
+          Class="table table-hover table-bordered table-striped"
+          DataProvider="CollectionsDataProvider"
+          AllowPaging="true"
+          PageSize="5"
+          Responsive="true">
+
+        <GridColumn TItem="CollectionData" HeaderText="Title" PropertyName="Title">
+            <NavLink href="@($"/Portal/Manage/Collections/{context.PublicId}")" class="">@context.Title</NavLink>
+        </GridColumn>
+
+        <GridColumn TItem="CollectionData" HeaderText="Description" PropertyName="Description">
+            @context.Description
+        </GridColumn>
+
+        <GridColumn TItem="CollectionData" HeaderText="Last Modified" PropertyName="LastModifiedAt">
+            @context.LastModifiedAt?.ToLocalTime().ToString("G")
+        </GridColumn>
+    </Grid>
+
+    <Modal @ref="modal" title="Add new Collection" IsVerticallyCentered="true" IsScrollable="true">
+        <BodyTemplate>
+            <AddCollectionForm OnAdded="OnAddedCollectionsCallbackHandler" />
+        </BodyTemplate>
+    </Modal>
+</div>
+
+@code {
+    private Grid<CollectionData> grid = default!;
+
+    private Modal modal = default!;
+
+    private List<BreadcrumbItem> PageBreadcrumbs { get; set; } = [];
+
+    protected override void OnInitialized()
+    {
+        PageBreadcrumbs = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem{ Text = "Manage" },
+            new BreadcrumbItem{ Text = "Collections", IsCurrentPage = true },
+        };
+    }
+
+    private async Task<GridDataProviderResult<CollectionData>> CollectionsDataProvider(GridDataProviderRequest<CollectionData> request)
+    {
+        var result = await Mediator.Send(new GetCollections()
+            {
+                Page = request.PageNumber,
+                PerPage = request.PageSize
+            });
+
+        return await Task.FromResult(new GridDataProviderResult<CollectionData> { Data = result.Value.Items, TotalCount = result.Value.TotalCount });
+    }
+
+    private async Task ShowAddModal()
+    {
+        await modal.ShowAsync();
+    }
+
+    private async Task OnAddedCollectionsCallbackHandler()
+    {
+        await modal.HideAsync();
+        ToastService.Notify(new(ToastType.Success, $"Added new Collection successfully."));
+    }
+
+}

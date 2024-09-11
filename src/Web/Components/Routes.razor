@@ -2,7 +2,7 @@
 
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(DefaultLayout)">
             <NotAuthorized>
                 <RedirectToLogin />
             </NotAuthorized>

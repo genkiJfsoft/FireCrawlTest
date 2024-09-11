@@ -1,0 +1,101 @@
+﻿@page "/Collections"
+@attribute [StreamRendering]
+
+@using Ardalis.Result
+@using Core.Collections.Data
+@using Core.Collections.Features
+@using Core.Common.Data
+@inject NavigationManager NavigationManager
+
+<PageTitle>Collections</PageTitle>
+
+<div class="container-lg">
+    <h3>Collections</h3>
+
+    @if (paginatedCollections == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var collection in paginatedCollections.Items)
+            {
+                var collectionHref = $"/Collections/{collection.PublicId}";
+
+                <div class="col-12">
+                    <Card>
+                        <CardBody>
+                            <NavLink href="@collectionHref" class="text-decoration-none text-dark"><CardTitle>@collection.Title</CardTitle></NavLink>
+                            <CardText>@collection.Description</CardText>
+                        </CardBody>
+                        <CardFooter Class="d-flex justify-content-between align-items-center">
+                            <div><CardText Class="small text-muted">@collection.LastModifiedAt?.ToLocalTime().ToString("G")</CardText></div>
+                            <div><Button Color="ButtonColor.Light" To="@collectionHref" Type="ButtonType.Link" Size="ButtonSize.Small">View</Button></div>
+                        </CardFooter>
+                    </Card>
+                </div>
+            }
+        </div>
+
+        <div class="mt-3">
+            <Pagination ActivePageNumber="paginatedCollections.PageNumber"
+                TotalPages="paginatedCollections.TotalPages"
+                PageChanged="OnPaginationPageChanged"
+                DisplayPages="5"
+                FirstLinkIcon="IconName.ChevronDoubleLeft"
+                PreviousLinkIcon="IconName.ChevronLeft"
+                NextLinkIcon="IconName.ChevronRight"
+                LastLinkIcon="IconName.ChevronDoubleRight" />
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "page")]
+    private int? PageNumber { get; set; }
+
+    private Modal modal = default!;
+
+    private PaginatedList<CollectionData>? paginatedCollections;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadCollections(PageNumber ?? 1);
+    }
+
+    private async Task LoadCollections(int page)
+    {
+        var result = await Mediator.Send(new GetCollections()
+        {
+            Page = page,
+            PerPage = 10
+        });
+
+        if (result.IsSuccess)
+        {
+            paginatedCollections = result.Value;
+        }
+    }
+
+    private async Task ShowAddModal()
+    {
+        await modal.ShowAsync();
+    }
+
+    private async Task OnAddedResourceCallbackHandler()
+    {
+        await modal.HideAsync();
+        ToastService.Notify(new(ToastType.Success, $"Added new Collection successfully."));
+        NavigateToPageNumber(1);
+    }
+
+    private void OnPaginationPageChanged(int page) => NavigateToPageNumber(page);
+
+    private void NavigateToPageNumber(int page)
+    {
+        PageNumber = page;
+        var pageUrl = NavigationManager.GetUriWithQueryParameter("page", PageNumber);
+        NavigationManager.NavigateTo(pageUrl);
+    }
+}

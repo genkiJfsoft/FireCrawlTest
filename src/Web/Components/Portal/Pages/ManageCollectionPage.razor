@@ -1,58 +1,57 @@
-﻿@page "/collections/{collectionId}"
+﻿@page "/Portal/Manage/Collections/{collectionId}"
 
 @using Core.Collections.Features;
 @using Core.Collections.Data;
 
 <PageTitle>Collection</PageTitle>
 
+<div class="container-lg">
+    @if (collection == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div>
+            <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
+        </div>
 
-@if (collection == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <div>
-        <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
-    </div>
+        <h4>@collection.Title</h4>
 
-    <h4>@collection.Title</h4>
+        <p>
+            @collection.Description
+        </p>
 
-    <p>
-        @collection.Description
-    </p>
-
-    <AuthorizeView>
         <Button Color="ButtonColor.Primary" @onclick="ShowAddModal" class="mb-3">Add</Button>
+
+        <Grid @ref="grid"
+              TItem="ResourceData"
+              Class="table table-hover table-bordered table-striped"
+              DataProvider="ResourceDataProvider"
+              AllowPaging="true"
+              PageSize="5"
+              Responsive="true">
+
+            <GridColumn TItem="ResourceData" HeaderText="Title" PropertyName="Title">
+                @context.Title
+            </GridColumn>
+
+            <GridColumn TItem="ResourceData" HeaderText="Notes" PropertyName="Notes">
+                @context.Notes
+            </GridColumn>
+
+            <GridColumn TItem="ResourceData" HeaderText="Link" PropertyName="LinkToUrl">
+                <a href="@context.LinkToUrl" target="_blank">@context.LinkToUrl</a>
+            </GridColumn>
+        </Grid>
 
         <Modal @ref="modal" title="Add new Resource" IsVerticallyCentered="true" IsScrollable="true">
             <BodyTemplate>
                 <AddResourceForm CollectionId="collection.Id" OnAdded="OnAddedResourceCallbackHandler" />
             </BodyTemplate>
         </Modal>
-    </AuthorizeView>
-
-    <Grid @ref="grid"
-        TItem="ResourceData"
-        Class="table table-hover table-bordered table-striped"
-        DataProvider="ResourceDataProvider"
-        AllowPaging="true"
-        PageSize="5"
-        Responsive="true">
-
-        <GridColumn TItem="ResourceData" HeaderText="Title" PropertyName="Title">
-            @context.Title
-        </GridColumn>
-
-            <GridColumn TItem="ResourceData" HeaderText="Notes" PropertyName="Notes">
-            @context.Notes
-        </GridColumn>
-
-        <GridColumn TItem="ResourceData" HeaderText="Link" PropertyName="LinkToUrl">
-            <a href="@context.LinkToUrl" target="_blank">@context.LinkToUrl</a>
-        </GridColumn>
-    </Grid>
-}
+    }
+</div>
 
 @code {
     [Parameter]
@@ -72,7 +71,8 @@ else
 
         PageBreadcrumbs = new List<BreadcrumbItem>
         {
-            new BreadcrumbItem{ Text = "Collections", Href ="/Collections" },
+            new BreadcrumbItem{ Text = "Manage" },
+            new BreadcrumbItem{ Text = "Collections", Href ="/Portal/Manage/Collections" },
             new BreadcrumbItem{ Text = collection?.Title ?? "", IsCurrentPage = true }
         };
     }

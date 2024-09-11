@@ -1,0 +1,97 @@
+﻿@page "/Collections/{collectionId}"
+
+@using Core.Collections.Features;
+@using Core.Collections.Data;
+
+<PageTitle>Collection</PageTitle>
+
+<div class="container-lg">
+    @if (collection == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div>
+            <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
+        </div>
+
+        <h4>@collection.Title</h4>
+
+        <p>
+            @collection.Description
+        </p>
+
+        <Grid @ref="grid"
+              TItem="ResourceData"
+              Class="table table-hover table-bordered table-striped"
+              DataProvider="ResourceDataProvider"
+              AllowPaging="true"
+              PageSize="5"
+              Responsive="true">
+
+            <GridColumn TItem="ResourceData" HeaderText="Title" PropertyName="Title">
+                @context.Title
+            </GridColumn>
+
+            <GridColumn TItem="ResourceData" HeaderText="Notes" PropertyName="Notes">
+                @context.Notes
+            </GridColumn>
+
+            <GridColumn TItem="ResourceData" HeaderText="Link" PropertyName="LinkToUrl">
+                <a href="@context.LinkToUrl" target="_blank">@context.LinkToUrl</a>
+            </GridColumn>
+        </Grid>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string CollectionId { get; set; } = null!;
+
+    private List<BreadcrumbItem> PageBreadcrumbs { get; set; } = [];
+
+    private CollectionData? collection;
+
+    private Grid<ResourceData> grid = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCollectionData();
+
+        PageBreadcrumbs = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem{ Text = "Collections", Href ="/Collections" },
+            new BreadcrumbItem{ Text = collection?.Title ?? "", IsCurrentPage = true }
+        };
+    }
+
+    protected async Task LoadCollectionData()
+    {
+        var result = await Mediator.Send(new GetCollection(CollectionId));
+
+        if (result.IsSuccess)
+        {
+            collection = result.Value;
+        }
+
+        // TODO: handle not found
+    }
+
+    private async Task<GridDataProviderResult<ResourceData>> ResourceDataProvider(GridDataProviderRequest<ResourceData> request)
+    {
+        if (collection == null)
+        {
+            return await Task.FromResult(request.ApplyTo([]));
+        }
+
+        var result = await Mediator.Send(new GetResourcesByCollectionId()
+        {
+            CollectionId = collection.Id,
+            Page = request.PageNumber,
+            PerPage = request.PageSize
+        });
+
+        return await Task.FromResult(new GridDataProviderResult<ResourceData> { Data = result.Value.Items, TotalCount = result.Value.TotalCount });
+    }
+}
