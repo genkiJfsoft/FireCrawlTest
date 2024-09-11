@@ -1,11 +1,85 @@
 ﻿@page "/Contact"
 
+@using System.ComponentModel.DataAnnotations
+@using Core.Enquiries.Features
+
 <div class="container-lg">
     <h3>Contact</h3>
 
-    <ContactForm />
+    <AlertMessage @ref="alert" Dismissible="true" />
+
+    <EditForm FormName="ContactForm" Enhance="true" Model="Model" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator /> <!-- Required for validation -->
+        <div class="mb-3">
+            <label for="Name" class="form-label">Name</label>
+            <InputText @bind-Value="Model!.Name" class="form-control" id="Name" />
+            <ValidationMessage For="() => Model.Name" /> <!-- Display validation messages for this property -->
+        </div>
+
+        <div class="mb-3">
+            <label for="Email" class="form-label">Email address</label>
+            <InputText @bind-Value="Model!.Email" class="form-control" id="Email" />
+            <ValidationMessage For="() => Model.Email" />
+        </div>
+
+        <div class="mb-3">
+            <label for="Message" class="form-label">Message</label>
+            <InputTextArea @bind-Value="Model!.Message" class="form-control" id="Message" />
+            <ValidationMessage For="() => Model.Message" />
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </EditForm>
 </div>
 
 @code {
+    [SupplyParameterFromForm]
+    FormModel? Model { get; set; }
 
+    AlertMessage alert = default!;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private async Task HandleValidSubmit(EditContext context)
+    {
+
+        alert.Close();
+
+        PreloadService.Show();
+
+        var result = await Mediator.Send(new CreateEnquiry("Contact Form")
+            {
+                Name = Model!.Name,
+                Email = Model!.Email,
+                Subject = "General Inquiry",
+                Message = Model!.Message
+            });
+
+        PreloadService.Hide();
+
+        if (result.IsSuccess)
+        {
+            alert.ShowSuccess("Your enquiries has been sent successfully.");
+            Model = new FormModel();
+        }
+        else
+        {
+            alert.ShowDanger("Failed to submit your enquiries.");
+        }
+    }
+
+    class FormModel
+    {
+        [Required(ErrorMessage = "Please enter your name")]
+        public string Name { get; set; } = null!;
+
+        [Required(ErrorMessage = "Please enter your email address")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+        public string Email { get; set; } = null!;
+
+        [Required(ErrorMessage = "Please enter a message")]
+        public string Message { get; set; } = null!;
+    }
 }

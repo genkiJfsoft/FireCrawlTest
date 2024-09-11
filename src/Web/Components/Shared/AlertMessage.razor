@@ -1,0 +1,45 @@
+﻿@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <Alert Color="@alertColor" Class="@alertDismissible" Dismissable="false">
+        <Icon Name="@alertIconName" class="me-2"></Icon>@alertMessage
+        @if (Dismissible)
+        {
+            <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
+        }
+    </Alert>
+}
+
+@code {
+    [Parameter]
+    public bool Dismissible { get; set; } = true;
+
+    private string alertDismissible => Dismissible ? "alert-dismissible" : "";
+
+    private AlertColor alertColor = AlertColor.Success;
+
+    private IconName alertIconName = IconName.CheckCircleFill;
+
+    private string? alertMessage;
+
+    protected void ShowAlert(string message, AlertColor color, IconName icon)
+    {
+        alertMessage = message;
+        alertColor = color;
+        alertIconName = icon;
+        StateHasChanged();
+    }
+
+    public void ShowSuccess(string message) => ShowAlert(message, AlertColor.Success, IconName.CheckCircleFill);
+
+    public void ShowDanger(string message) => ShowAlert(message, AlertColor.Danger, IconName.ExclamationTriangleFill);
+
+    public void ShowInfo(string message) => ShowAlert(message, AlertColor.Info, IconName.ExclamationCircleFill);
+
+    public void ShowWarning(string message) => ShowAlert(message, AlertColor.Warning, IconName.ExclamationTriangleFill);
+
+    public void Close()
+    {
+        alertMessage = null;
+        StateHasChanged();
+    }
+}
