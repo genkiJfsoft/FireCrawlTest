@@ -1,0 +1,161 @@
+﻿@using Core.Collections.Data
+@using Core.Collections.Features
+@using System.ComponentModel.DataAnnotations
+
+@inject NavigationManager NavigationManager
+
+@page "/Portal/Manage/Collections/Add"
+@page "/Portal/Manage/Collections/{CollectionPublicId}/Edit"
+
+<PageTitle>@pageTitle</PageTitle>
+
+<div>
+    <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
+</div>
+
+<h3>@pageTitle</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm FormName="AddCollectionForm" Enhance="true" Model="Model" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label for="Title" class="form-label">Title</label>
+                <InputText @bind-Value="Model!.Title" class="form-control" id="Title" />
+                <ValidationMessage For="() => Model.Title" />
+            </div>
+
+            <div class="mb-3">
+                <label for="Description" class="form-label">Description</label>
+                <InputText @bind-Value="Model!.Description" class="form-control" id="Description" />
+                <ValidationMessage For="() => Model.Description" />
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? CollectionPublicId { get; set; }
+
+    [SupplyParameterFromForm]
+    FormModel? Model { get; set; }
+
+    private string pageTitle = "Add Collection";
+
+    private CollectionData? collection;
+
+    private List<BreadcrumbItem> PageBreadcrumbs { get; set; } = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CollectionPublicId != null)
+        {
+            pageTitle = "Edit Collection";
+
+            var result = await Mediator.Send(new GetCollection(CollectionPublicId));
+
+            if (result.IsSuccess)
+            {
+                collection = result.Value;
+
+                PageBreadcrumbs.Add(new BreadcrumbItem { Text = collection.PublicId ?? "", Href = $"/Portal/Manage/Collections/{collection.PublicId}" });
+                PageBreadcrumbs.Add(new BreadcrumbItem { Text = "Edit", IsCurrentPage = true });
+
+                Model = new()
+                    {
+                        Title = collection.Title,
+                        Description = collection.Description
+                    };
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/Portal/Manage/Collections");
+            }
+        }
+        else
+        {
+
+            PageBreadcrumbs.Add(new BreadcrumbItem { Text = "Add", IsCurrentPage = true });
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Model ??= new();
+
+        PageBreadcrumbs = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem{ Text = "Manage" },
+            new BreadcrumbItem{ Text = "Collections", Href = "/Portal/Manage/Collections"},
+        };
+    }
+
+    private void OnAddedCollectionsCallbackHandler()
+    {
+        NavigationManager.NavigateTo("/Portal/Manage/Collections");
+        ToastService.Notify(new(ToastType.Success, $"Added new Collection successfully."));
+    }
+
+    private async Task HandleValidSubmit(EditContext context)
+    {
+        PreloadService.Show();
+
+        if (collection != null)
+        {
+            var result = await Mediator.Send(new UpdateCollection()
+                {
+                    Id = collection.Id,
+                    Title = Model!.Title,
+                    Description = Model!.Description
+                });
+
+            PreloadService.Hide();
+
+            if (result.IsSuccess)
+            {
+                NavigationManager.NavigateTo($"/Portal/Manage/Collections");
+                ToastService.Notify(new(ToastType.Success, $"Collection updated successfully."));
+            }
+            else
+            {
+                ToastService.Notify(new(ToastType.Danger, $"Failed to update Collection."));
+            }
+        }
+        else
+        {
+            var result = await Mediator.Send(new CreateCollection()
+                {
+                    Title = Model!.Title,
+                    Description = Model!.Description
+                });
+
+            PreloadService.Hide();
+
+            if (result.IsSuccess)
+            {
+                Model = new FormModel();
+                NavigationManager.NavigateTo("/Portal/Manage/Collections");
+                ToastService.Notify(new(ToastType.Success, $"Added new Collection successfully."));
+            }
+            else
+            {
+                ToastService.Notify(new(ToastType.Danger, $"Failed to add Collection."));
+            }
+        }
+    }
+
+    class FormModel
+    {
+        [Required]
+        public string Title { get; set; } = null!;
+
+        [Required]
+        public string Description { get; set; } = null!;
+    }
+}

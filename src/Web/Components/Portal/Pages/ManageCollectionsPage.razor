@@ -8,47 +8,55 @@
 
 <PageTitle>Collections</PageTitle>
 
-<div class="container-lg">
-    <div>
-        <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
-    </div>
-
-    <h4>Collections</h4>
-
-    <Button Color="ButtonColor.Primary" @onclick="ShowAddModal" class="mb-3">Add</Button>
-
-    <Grid @ref="grid"
-          TItem="CollectionData"
-          Class="table table-hover table-bordered table-striped"
-          DataProvider="CollectionsDataProvider"
-          AllowPaging="true"
-          PageSize="5"
-          Responsive="true">
-
-        <GridColumn TItem="CollectionData" HeaderText="Title" PropertyName="Title">
-            <NavLink href="@($"/Portal/Manage/Collections/{context.PublicId}")" class="">@context.Title</NavLink>
-        </GridColumn>
-
-        <GridColumn TItem="CollectionData" HeaderText="Description" PropertyName="Description">
-            @context.Description
-        </GridColumn>
-
-        <GridColumn TItem="CollectionData" HeaderText="Last Modified" PropertyName="LastModifiedAt">
-            @context.LastModifiedAt?.ToLocalTime().ToString("G")
-        </GridColumn>
-    </Grid>
-
-    <Modal @ref="modal" title="Add new Collection" IsVerticallyCentered="true" IsScrollable="true">
-        <BodyTemplate>
-            <AddCollectionForm OnAdded="OnAddedCollectionsCallbackHandler" />
-        </BodyTemplate>
-    </Modal>
+<div>
+    <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
 </div>
+
+<h4>Collections</h4>
+
+<Button Color="ButtonColor.Primary" @onclick="NavigateToAddPage" class="mb-3">Add</Button>
+
+<Grid @ref="grid"
+        TItem="CollectionData"
+        Class="table table-hover table-bordered table-striped"
+        DataProvider="CollectionsDataProvider"
+        AllowPaging="true"
+        PageSize="5"
+      Responsive="true">
+
+    <GridColumn TItem="CollectionData" HeaderText="Id" PropertyName="Id">
+        <NavLink href="@($"/Portal/Manage/Collections/{context.PublicId}")" class="">@context.PublicId</NavLink>
+    </GridColumn>
+
+    <GridColumn TItem="CollectionData" HeaderText="Title" PropertyName="Title">
+        @context.Title
+    </GridColumn>
+
+    <GridColumn TItem="CollectionData" HeaderText="Description" PropertyName="Description">
+        @context.Description
+    </GridColumn>
+
+    <GridColumn TItem="CollectionData" HeaderText="Last Modified" PropertyName="LastModifiedAt">
+        @context.LastModifiedAt?.ToLocalTime().ToString("G")
+    </GridColumn>
+
+    <GridColumn TItem="CollectionData" HeaderText="">
+        <Button Type="ButtonType.Link" Color="ButtonColor.Secondary" Size="ButtonSize.Small" To="@($"/Portal/Manage/Collections/{context.PublicId}/Edit")">
+            <Icon Name="IconName.PencilSquare" />
+        </Button>
+
+        <Button Color="ButtonColor.Danger" Size="ButtonSize.Small" @onclick="() => ShowDeleteCollectionDialog(context)">
+            <Icon Name="IconName.TrashFill" />
+        </Button>
+    </GridColumn>
+</Grid>
+
+<ConfirmDialog @ref="dialog" />
 
 @code {
     private Grid<CollectionData> grid = default!;
 
-    private Modal modal = default!;
+    private ConfirmDialog dialog = default!;
 
     private List<BreadcrumbItem> PageBreadcrumbs { get; set; } = [];
 
@@ -72,15 +80,32 @@
         return await Task.FromResult(new GridDataProviderResult<CollectionData> { Data = result.Value.Items, TotalCount = result.Value.TotalCount });
     }
 
-    private async Task ShowAddModal()
+    private async Task ShowDeleteCollectionDialog(CollectionData c)
     {
-        await modal.ShowAsync();
+        var confirmation = await dialog.ShowAsync(
+            title: $"Are you sure you want to delete the Collection #{c.PublicId}?",
+            message1: "This will also deletes the Resources in this Collection can not be rolled back.",
+            message2: "Do you want to proceed?");
+
+        if (confirmation)
+        {
+            var result = await Mediator.Send(new DeleteCollection(c.Id));
+
+            if (result.IsSuccess)
+            {
+                await grid.RefreshDataAsync();
+
+                ToastService.Notify(new(ToastType.Success, $"Collection deleted successfully."));
+            }
+        }
+        else
+        {
+            // do whatever
+        }
     }
 
-    private async Task OnAddedCollectionsCallbackHandler()
+    private void NavigateToAddPage()
     {
-        await modal.HideAsync();
-        ToastService.Notify(new(ToastType.Success, $"Added new Collection successfully."));
+        NavigationManager.NavigateTo("/Portal/Manage/Collections/Add");
     }
-
 }

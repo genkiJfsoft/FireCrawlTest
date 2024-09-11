@@ -1,0 +1,101 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using Core.Collections.Features
+
+<Offcanvas @ref="modal" Title="Add new Resource" Size="OffcanvasSize.Large" FooterCssClass="justify-content-between">
+    <BodyTemplate>
+        <EditForm id="@FormId" Enhance="true" Model="Model" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label for="Title" class="form-label">Title</label>
+                <InputText @bind-Value="Model!.Title" class="form-control" id="Title" />
+                <ValidationMessage For="() => Model.Title" />
+            </div>
+
+            <div class="mb-3">
+                <label for="Notes" class="form-label">Notes</label>
+                <InputText @bind-Value="Model!.Notes" class="form-control" id="Notes" />
+                <ValidationMessage For="() => Model.Notes" />
+            </div>
+
+            <div class="mb-3">
+                <label for="LinkToUrl" class="form-label">Link To</label>
+                <InputText @bind-Value="Model!.LinkToUrl" class="form-control" id="LinkToUrl" />
+                <ValidationMessage For="() => Model.LinkToUrl" />
+            </div>
+        </EditForm>
+    </BodyTemplate>
+    <FooterTemplate>
+        <Button Color="ButtonColor.Secondary" @onclick="HideAsync">Close</Button>
+        <button type="submit" form="@FormId" class="btn btn-primary">Submit</button>
+    </FooterTemplate>
+</Offcanvas>
+
+@code {
+    private Guid FormId = Guid.NewGuid();
+
+    [Parameter]
+    public int CollectionId { get; set; }
+
+    [Parameter]
+    public EventCallback OnAdded { get; set; }
+
+    private Offcanvas modal = default!;
+
+    [SupplyParameterFromForm]
+    FormModel? Model { get; set; }
+
+    string? message;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    public async Task ShowAsync()
+    {
+        await modal.ShowAsync();
+    }
+
+    public async Task HideAsync()
+    {
+        Model = new FormModel();
+        await modal.HideAsync();
+    }
+
+    private async Task HandleValidSubmit(EditContext context)
+    {
+        PreloadService.Show();
+
+        var result = await Mediator.Send(new CreateResource()
+            {
+                CollectionId = CollectionId,
+                Title = Model!.Title,
+                Notes = Model!.Notes,
+                LinkToUrl = Model.LinkToUrl
+            });
+
+        PreloadService.Hide();
+
+        if (result.IsSuccess)
+        {
+            message = $"Added successfully. Id: {result.Value}";
+            Model = new FormModel();
+            await OnAdded.InvokeAsync(result);
+        }
+        else
+        {
+            message = "Error";
+        }
+    }
+
+    class FormModel
+    {
+        [Required]
+        public string Title { get; set; } = null!;
+
+        [Required]
+        public string Notes { get; set; } = null!;
+
+        [Required]
+        [Url]
+        public string LinkToUrl { get; set; } = null!;
+    }
+}

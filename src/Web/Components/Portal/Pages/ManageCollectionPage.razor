@@ -1,65 +1,59 @@
-﻿@page "/Portal/Manage/Collections/{collectionId}"
+﻿@page "/Portal/Manage/Collections/{CollectionPublicId}"
 
 @using Core.Collections.Features;
 @using Core.Collections.Data;
 
 <PageTitle>Collection</PageTitle>
 
-<div class="container-lg">
-    @if (collection == null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else
-    {
-        <div>
-            <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
-        </div>
+@if (collection == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div>
+        <Breadcrumb Items="PageBreadcrumbs"></Breadcrumb>
+    </div>
 
-        <h4>@collection.Title</h4>
+    <h4>@collection.Title</h4>
 
-        <p>
-            @collection.Description
-        </p>
+    <p>
+        @collection.Description
+    </p>
 
-        <Button Color="ButtonColor.Primary" @onclick="ShowAddModal" class="mb-3">Add</Button>
+    <Button Color="ButtonColor.Primary" @onclick="ShowAddResourceModal" class="mb-3">Add Resource</Button>
 
-        <Grid @ref="grid"
-              TItem="ResourceData"
-              Class="table table-hover table-bordered table-striped"
-              DataProvider="ResourceDataProvider"
-              AllowPaging="true"
-              PageSize="5"
-              Responsive="true">
+    <Grid @ref="grid"
+            TItem="ResourceData"
+            Class="table table-hover table-bordered table-striped"
+            DataProvider="ResourceDataProvider"
+            AllowPaging="true"
+            PageSize="5"
+            Responsive="true">
 
-            <GridColumn TItem="ResourceData" HeaderText="Title" PropertyName="Title">
-                @context.Title
-            </GridColumn>
+        <GridColumn TItem="ResourceData" HeaderText="Title" PropertyName="Title">
+            @context.Title
+        </GridColumn>
 
-            <GridColumn TItem="ResourceData" HeaderText="Notes" PropertyName="Notes">
-                @context.Notes
-            </GridColumn>
+        <GridColumn TItem="ResourceData" HeaderText="Notes" PropertyName="Notes">
+            @context.Notes
+        </GridColumn>
 
-            <GridColumn TItem="ResourceData" HeaderText="Link" PropertyName="LinkToUrl">
-                <a href="@context.LinkToUrl" target="_blank">@context.LinkToUrl</a>
-            </GridColumn>
-        </Grid>
+        <GridColumn TItem="ResourceData" HeaderText="Link" PropertyName="LinkToUrl">
+            <a href="@context.LinkToUrl" target="_blank">@context.LinkToUrl</a>
+        </GridColumn>
+    </Grid>
 
-        <Modal @ref="modal" title="Add new Resource" IsVerticallyCentered="true" IsScrollable="true">
-            <BodyTemplate>
-                <AddResourceForm CollectionId="collection.Id" OnAdded="OnAddedResourceCallbackHandler" />
-            </BodyTemplate>
-        </Modal>
-    }
-</div>
+    <AddResourceModal @ref="addResourceModal" CollectionId="@collection.Id" OnAdded="HandleOnAddedResource" />
+}
 
 @code {
     [Parameter]
-    public string CollectionId { get; set; } = null!;
+    public string CollectionPublicId { get; set; } = null!;
 
     private List<BreadcrumbItem> PageBreadcrumbs { get; set; } = [];
 
-    private Modal modal = default!;
+    private AddResourceModal addResourceModal = default!;
 
     private CollectionData? collection;
 
@@ -73,13 +67,13 @@
         {
             new BreadcrumbItem{ Text = "Manage" },
             new BreadcrumbItem{ Text = "Collections", Href ="/Portal/Manage/Collections" },
-            new BreadcrumbItem{ Text = collection?.Title ?? "", IsCurrentPage = true }
+            new BreadcrumbItem{ Text = collection?.PublicId ?? "", IsCurrentPage = true }
         };
     }
 
     protected async Task LoadCollectionData()
     {
-        var result = await Mediator.Send(new GetCollection(CollectionId));
+        var result = await Mediator.Send(new GetCollection(CollectionPublicId));
 
         if (result.IsSuccess)
         {
@@ -106,15 +100,15 @@
         return await Task.FromResult(new GridDataProviderResult<ResourceData> { Data = result.Value.Items, TotalCount = result.Value.TotalCount });
     }
 
-    private async Task ShowAddModal()
+    private async Task ShowAddResourceModal()
     {
-        await modal.ShowAsync();
+        await addResourceModal.ShowAsync();
     }
 
-    private async Task OnAddedResourceCallbackHandler()
+    private async Task HandleOnAddedResource()
     {
         await grid.RefreshDataAsync();
-        await modal.HideAsync();
+        await addResourceModal.HideAsync();
 
         ToastService.Notify(new(ToastType.Success, $"Added new Resource successfully."));
     }
