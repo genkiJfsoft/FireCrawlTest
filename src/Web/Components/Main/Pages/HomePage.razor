@@ -1,16 +1,22 @@
 ﻿@page "/"
+@using Core.Identity.Data
+@using Web.Components.Account
 
 <PageTitle>Home</PageTitle>
 
 <div class="container-lg">
     <AuthorizeView>
         <Authorized>
-            <h1>Hello, @(context.User.Identity?.Name)!</h1>
+            <p>Hello, @context.User.Identity!.Name</p>
+
+            <AuthorizeView Roles="@KnownRoles.Administrator" Context="innerContext">
+                <p>You have the 'Administrator' role.</p>
+            </AuthorizeView>
+
+            <Button Type="ButtonType.Link" To="/Portal/Dashboard" Color="ButtonColor.Primary">Dashboard</Button>
         </Authorized>
         <NotAuthorized>
             <h1>Hello, world!</h1>
         </NotAuthorized>
     </AuthorizeView>
-
-    Welcome to your new app.
 </div>
