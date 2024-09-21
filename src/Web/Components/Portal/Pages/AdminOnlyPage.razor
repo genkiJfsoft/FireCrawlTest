@@ -1,0 +1,9 @@
+﻿@page "/Portal/AdminOnly"
+
+@attribute [Authorize(Roles = KnownRoles.Administrator)]
+
+<h3>Admin Only</h3>
+
+@code {
+
+}

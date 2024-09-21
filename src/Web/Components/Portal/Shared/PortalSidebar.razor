@@ -1,32 +1,46 @@
-﻿<Sidebar @ref="sidebar"
+﻿@using System.Security.Claims
+
+<Sidebar @ref="sidebar"
     IconName="IconName.CodeSquare"
     Title="Dev List"
     DataProvider="SidebarDataProvider" />
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private ClaimsPrincipal currentUser = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = (await AuthState).User;
+    }
+
     Sidebar sidebar = default!;
 
-    IEnumerable<NavItem>? navItems;
+    List<NavItem> navItems = [];
 
     private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
     {
-        if (navItems is null)
+        if (!navItems.Any())
         {
-            navItems = GetNavItems();
+            LoadNavItems();
         }
 
         return await Task.FromResult(request.ApplyTo(navItems));
     }
 
-    private IEnumerable<NavItem> GetNavItems()
+    private void LoadNavItems()
     {
-        navItems = new List<NavItem>
-        {
-            new NavItem { Id = "1", Href = "/Portal/Dashboard", IconName = IconName.Speedometer, Text = "Dashboard"},
-            new NavItem { Id = "2", IconName = IconName.BriefcaseFill, Text = "Manage"},
-            new NavItem { Id = "3", ParentId = "2", Href = "/Portal/Manage/Collections", IconName = IconName.CardList, Text = "Collections"},
-        };
+        var manageNavItemId = Guid.NewGuid().ToString();
 
-        return navItems;
+        navItems.Add(new NavItem { Id = Guid.NewGuid().ToString(), Href = "/Portal/Dashboard", IconName = IconName.Speedometer, Text = "Dashboard" });
+        navItems.Add(new NavItem { Id = manageNavItemId, IconName = IconName.BriefcaseFill, Text = "Manage" });
+        navItems.Add(new NavItem { Id = Guid.NewGuid().ToString(), ParentId = manageNavItemId, Href = "/Portal/Manage/Collections", IconName = IconName.CardList, Text = "Collections" });
+
+        if (currentUser.IsInRole(KnownRoles.Administrator))
+        {
+            navItems.Add(new NavItem { Id = Guid.NewGuid().ToString(), Href = "/Portal/AdminOnly", IconName = IconName.BriefcaseFill, Text = "Admin" });
+        }
     }
 }
