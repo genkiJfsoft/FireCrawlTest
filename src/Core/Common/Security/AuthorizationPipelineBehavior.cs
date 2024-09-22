@@ -7,21 +7,21 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Core.Common.Security;
 
-public class AuthorizationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+internal class AuthorizationPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly IUserPayload _currentUser;
+    private readonly IRequestUserAccessor _userAccessor;
     private readonly UserManager<User> _userManager;
     private readonly IUserClaimsPrincipalFactory<User> _userClaimsPrincipalFactory;
     private readonly IAuthorizationService _authorizationService;
 
     public AuthorizationPipelineBehavior(
-        IUserPayload currentUser,
+        IRequestUserAccessor userAccessor,
         UserManager<User> userManager,
         IUserClaimsPrincipalFactory<User> userClaimsPrincipalFactory,
         IAuthorizationService authorizationService)
     {
-        _currentUser = currentUser;
+        _userAccessor = userAccessor;
         _userManager = userManager;
         _userClaimsPrincipalFactory = userClaimsPrincipalFactory;
         _authorizationService = authorizationService;
@@ -34,12 +34,7 @@ public class AuthorizationPipelineBehavior<TRequest, TResponse> : IPipelineBehav
         if (authorizeAttributes.Any())
         {
             // Must be authenticated user
-            if (_currentUser.UserId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            var user = await _userManager.FindByIdAsync(_currentUser.UserId) ?? throw new UnauthorizedAccessException();
+            var user = await _userManager.GetUserAsync(_userAccessor.EnsureAuthenticated()) ?? throw new UnauthorizedAccessException();
 
             await HandleRoleBasedAuthorizationsAsync(user, authorizeAttributes);
             await HandlePolicyBasedAuthorizationsAsync(user, authorizeAttributes);

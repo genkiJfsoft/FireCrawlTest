@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Serilog.Events;
 using Web.Components;
-using Web.Components.Account;
+using Web.Endpoints;
 using Web.Endpoints.Common;
-using Web.Security;
+using Web.Services;
 
 Log.Logger = new LoggerConfiguration()
   .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -30,7 +30,7 @@ try
     builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
     builder.Services.AddHttpContextAccessor();
-    builder.Services.AddScoped<IUserPayload, UserPayload>();
+    builder.Services.AddScoped<IRequestUserAccessor, HttpContextUserAccessor>();
 
     // Register Logger
     builder.Services.AddSerilog((s, c) => c
@@ -43,7 +43,7 @@ try
 
     builder.Services.ConfigureApplicationCookie(options =>
     {
-        options.LoginPath = "/Account/Login";
+        options.LoginPath = IdentityRedirectManager.LoginPath;
     });
 
     builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
