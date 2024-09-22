@@ -10,9 +10,9 @@ using Microsoft.Extensions.Primitives;
 using Web.Components.Account.Pages;
 using Web.Components.Account.Pages.Manage;
 
-namespace Microsoft.AspNetCore.Routing;
+namespace Web.Endpoints;
 
-internal static class IdentityComponentsEndpointRouteBuilderExtensions
+internal static class IdentityEndpoints
 {
     // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
     public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)

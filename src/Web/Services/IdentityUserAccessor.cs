@@ -1,10 +1,17 @@
 using Core.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 
-namespace Web.Components.Account;
+namespace Web.Services;
 
 internal sealed class IdentityUserAccessor(UserManager<User> userManager, IdentityRedirectManager redirectManager)
 {
+    public async Task<User?> GetUserAsync(HttpContext context)
+    {
+        var user = await userManager.GetUserAsync(context.User);
+
+        return user;
+    }
+
     public async Task<User> GetRequiredUserAsync(HttpContext context)
     {
         var user = await userManager.GetUserAsync(context.User);

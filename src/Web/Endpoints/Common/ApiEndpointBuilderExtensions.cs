@@ -1,7 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
-using Ardalis.GuardClauses;
+﻿using Ardalis.GuardClauses;
 using Core.Common.Security;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace Web.Endpoints.Common;
 

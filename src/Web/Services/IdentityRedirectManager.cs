@@ -1,10 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
 
-namespace Web.Components.Account;
+namespace Web.Services;
 
 internal sealed class IdentityRedirectManager(NavigationManager navigationManager)
 {
+    public const string LoginPath = "/Account/Login";
     public const string StatusCookieName = "Identity.StatusMessage";
 
     private static readonly CookieBuilder StatusCookieBuilder = new()
@@ -55,4 +56,12 @@ internal sealed class IdentityRedirectManager(NavigationManager navigationManage
     [DoesNotReturn]
     public void RedirectToCurrentPageWithStatus(string message, HttpContext context)
         => RedirectToWithStatus(CurrentPath, message, context);
+
+    [DoesNotReturn]
+    public void RedirectToLogin(string? returnUrl = null)
+    {
+        string returnTo = returnUrl ?? Uri.EscapeDataString(navigationManager.Uri);
+        navigationManager.NavigateTo($"{LoginPath}{(returnTo != "" ? $"?returnUrl={returnUrl}" : "")}", forceLoad: true);
+        throw new UnauthorizedAccessException();
+    }
 }
