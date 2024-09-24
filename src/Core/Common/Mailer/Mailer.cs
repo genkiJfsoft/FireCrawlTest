@@ -1,6 +1,7 @@
 ﻿using Core.Common.Configurations;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using MimeKit;
 
 namespace Core.Common.Mailer;
@@ -33,7 +34,7 @@ internal class Mailer : IMailer
         using (var client = new SmtpClient())
         {
             await client.ConnectAsync(_config.SmtpServer, _config.SmtpPort, false);
-            if (_config.SmtpUsername != null && _config.SmtpUsername != null)
+            if (!_config.SmtpUsername.IsNullOrEmpty())
             {
                 await client.AuthenticateAsync(_config.SmtpUsername, _config.SmtpPassword);
             }
