@@ -1,4 +1,5 @@
 ﻿@inject NavigationManager NavigationManager
+@inject IStringLocalizer<Common.Strings> L
 
 <AuthorizeView>
     <Authorized>
@@ -23,7 +24,7 @@
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                         <button type="submit" class="dropdown-item">
-                            Logout
+                            @L["Logout"]
                         </button>
                     </form>
                 </li>
@@ -32,7 +33,7 @@
     </Authorized>
     <NotAuthorized>
         <NavLink href="Account/Login" class="btn btn-light">
-            Login
+            @L["Login"]
         </NavLink>
     </NotAuthorized>
 </AuthorizeView>

@@ -3,8 +3,10 @@ using Core.Common.Data;
 using Core.Common.Security;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
+using Web.Common;
 using Web.Components;
 using Web.Endpoints;
 using Web.Endpoints.Common;
@@ -54,6 +56,15 @@ try
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 
+    builder.Services.AddLocalization();
+    builder.Services.Configure<RequestLocalizationOptions>(options =>
+    {
+        options.SetDefaultCulture(Localizations.DefaultCulture.Name);
+        options.SupportedCultures = Localizations.SupportedCultures;
+        options.SupportedUICultures = Localizations.SupportedCultures;
+        options.FallBackToParentUICultures = true;
+    });
+
     var app = builder.Build();
 
     if (app.Environment.IsDevelopment())
@@ -74,6 +85,7 @@ try
     app.UseSerilogRequestLogging();
     app.UseHttpsRedirection();
 
+    app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
     app.UseStaticFiles();
     app.UseAntiforgery();
 
@@ -82,6 +94,8 @@ try
 
     // Add additional endpoints required by the Identity /Account Razor components.
     app.MapAdditionalIdentityEndpoints();
+
+    app.MapLocalizationsEndpoints();
 
     app.MapApiEndpoints();
 

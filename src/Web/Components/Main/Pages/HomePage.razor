@@ -2,6 +2,8 @@
 @using Core.Identity.Data
 @using Web.Components.Account
 
+@inject IStringLocalizer<HomePage> L
+
 <PageTitle>Home</PageTitle>
 
 <div class="container-lg">
@@ -16,7 +18,7 @@
             <Button Type="ButtonType.Link" To="/Portal/Dashboard" Color="ButtonColor.Primary">Dashboard</Button>
         </Authorized>
         <NotAuthorized>
-            <h1>Hello, world!</h1>
+            <h1>@L["Welcome"]</h1>
         </NotAuthorized>
     </AuthorizeView>
 </div>

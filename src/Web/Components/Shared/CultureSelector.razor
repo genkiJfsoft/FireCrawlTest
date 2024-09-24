@@ -1,0 +1,46 @@
+﻿@using System.Globalization
+@using Microsoft.Extensions.Options
+@using Web.Common
+
+@inject NavigationManager NavigationManager
+@inject IOptions<RequestLocalizationOptions> RequestLocalizationOptions
+
+<Dropdown>
+    <DropdownToggleButton Class="text-light">
+        <Icon Name="IconName.Translate"/>
+    </DropdownToggleButton>
+    <DropdownMenu Position="DropdownMenuPosition.End">
+        @if (SupportedCultures is not null)
+        {
+            @foreach (var culture in SupportedCultures)
+            {
+                <DropdownItem Active="@(culture.Name == SelectedCulture.Name)" @onclick="() => ChangeCultureAsync(culture)">@culture.DisplayName</DropdownItem>
+            }
+        }
+    </DropdownMenu>
+</Dropdown>
+
+@code {
+    public CultureInfo SelectedCulture { get; set; } = Localizations.DefaultCulture;
+
+    public List<CultureInfo>? SupportedCultures { get; set; } = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        SupportedCultures = RequestLocalizationOptions.Value.SupportedCultures?.ToList();
+        SelectedCulture = CultureInfo.CurrentCulture;
+        return Task.CompletedTask;
+    }
+
+    public async Task ChangeCultureAsync(CultureInfo culture)
+    {
+        if (SelectedCulture.Name != culture.Name)
+        {
+            var id = Uri.EscapeDataString(culture.Name);
+            var returnUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+            NavigationManager.NavigateTo($"Culture?id={id}&returnUrl={returnUrl}", forceLoad: true);
+        }
+        await Task.CompletedTask;
+    }
+}
