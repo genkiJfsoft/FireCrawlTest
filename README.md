@@ -57,7 +57,7 @@ In development, you may have `appsettings.Development.json` file which look like
 > This project uses Entity Framework Core's Migrations to manage the database schemas. For more information, see the official documentation on
 > [Migrations][1].
 
-The application's Migrations files can be found in the `Core` project: `src/Core/Providers/Data/Migrations`.
+The application's Migrations files can be found in the `Core` project: `src/Core/Common/Data/Migrations`.
 
 During development, a local database copy can easily be created or updated by applying the migrations using EF Core command via Package Manager Console. First, open Package Manager Console panel in Visual Studio (select _Tools > NuGet Package Manager > **Package Manager Console**_ from the top menu). Next, change the _Default Project_ option to the `Core` project to ensures that commands are executed to the correct project. Then, run the following command:
 
