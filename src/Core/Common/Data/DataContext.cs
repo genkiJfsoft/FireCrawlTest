@@ -9,7 +9,7 @@ namespace Core.Common.Data;
 /// <summary>
 /// Database context for Entity Framework
 /// </summary>
-internal class DataContext : IdentityDbContext<User>
+internal class DataContext : IdentityDbContext<User>, IDataContext
 {
     public const string ConnectionStringName = "DefaultConnection";
 

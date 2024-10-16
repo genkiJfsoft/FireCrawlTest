@@ -52,10 +52,11 @@ public static class Injector
         ArgumentException.ThrowIfNullOrEmpty(connectionString);
 
         services.AddScoped<ISaveChangesInterceptor, TimestampableDataInterceptor>();
-        services.AddDbContext<DataContext>((sp, options) =>
-        {
+
+        services.AddDbContext<DataContext>((sp, options) => {
             options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
             options.UseSqlServer(connectionString);
+
             if (isDevelopment)
             {
                 options.LogTo(Console.WriteLine, LogLevel.Information)
@@ -63,6 +64,9 @@ public static class Injector
                     .EnableDetailedErrors();
             }
         });
+
+        services.AddScoped<IDbContextFactory<DataContext>, DataContextFactory>();
+        services.AddScoped<IDataContext>(sp => sp.GetRequiredService<IDbContextFactory<DataContext>>().CreateDbContext());
 
         services.AddScoped<DataContextInitializer>();
     }
