@@ -99,7 +99,7 @@ try
 
     app.MapApiEndpoints();
 
-    app.Run();
+    await app.RunAsync().ConfigureAwait(false);
 }
 catch (Exception ex) when (ex is not HostAbortedException && ex.Source != "Microsoft.EntityFrameworkCore.Design")
 {

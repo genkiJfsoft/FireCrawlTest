@@ -2,6 +2,7 @@
 using Core.Common.Data;
 using Core.Common.Exceptions;
 using Core.Common.Mailer;
+using Core.Common.Mediator;
 using Core.Common.Security;
 using Core.Identity.Data;
 using Core.Identity.Services;
@@ -42,6 +43,8 @@ public static class Injector
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionPipelineBehavior<,>));
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(AuthorizationPipelineBehavior<,>));
         });
+
+        services.AddScoped<IScopedMediator, ScopedMediator>();
 
         return services;
     }
