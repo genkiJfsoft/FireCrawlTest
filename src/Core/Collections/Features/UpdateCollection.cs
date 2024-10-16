@@ -14,7 +14,7 @@ public record UpdateCollection : IRequest<Result>
     public string Description { get; init; } = string.Empty;
 }
 
-internal class UpdateCollectionHandler(DataContext db) : IRequestHandler<UpdateCollection, Result>
+internal class UpdateCollectionHandler(IDataContext db) : IRequestHandler<UpdateCollection, Result>
 {
     public async Task<Result> Handle(UpdateCollection request, CancellationToken cancellationToken)
     {

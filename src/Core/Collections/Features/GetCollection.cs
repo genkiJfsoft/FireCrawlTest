@@ -8,7 +8,7 @@ namespace Core.Collections.Features;
 
 public record GetCollection(string PublicId, bool IncludeResources = false) : IRequest<Result<CollectionData>>;
 
-internal class GetCollectionHandler(DataContext db) : IRequestHandler<GetCollection, Result<CollectionData>>
+internal class GetCollectionHandler(IDataContext db) : IRequestHandler<GetCollection, Result<CollectionData>>
 {
     public async Task<Result<CollectionData>> Handle(GetCollection request, CancellationToken cancellationToken)
     {

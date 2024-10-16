@@ -12,7 +12,7 @@ public record GetResourcesByCollectionId : IRequest<Result<PaginatedList<Resourc
     public required int PerPage { get; init; }
 }
 
-internal class GetResourcesByCollectionIdHandler(DataContext db) : IRequestHandler<GetResourcesByCollectionId, Result<PaginatedList<ResourceData>>>
+internal class GetResourcesByCollectionIdHandler(IDataContext db) : IRequestHandler<GetResourcesByCollectionId, Result<PaginatedList<ResourceData>>>
 {
     public async Task<Result<PaginatedList<ResourceData>>> Handle(GetResourcesByCollectionId request, CancellationToken cancellationToken)
     {

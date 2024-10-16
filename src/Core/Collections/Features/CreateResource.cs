@@ -15,7 +15,7 @@ public record CreateResource : IRequest<Result>
     public required string LinkToUrl { get; init; }
 }
 
-internal class CreateResourceHandler(DataContext db) : IRequestHandler<CreateResource, Result>
+internal class CreateResourceHandler(IDataContext db) : IRequestHandler<CreateResource, Result>
 {
     public async Task<Result> Handle(CreateResource request, CancellationToken cancellationToken)
     {
@@ -31,7 +31,7 @@ internal class CreateResourceHandler(DataContext db) : IRequestHandler<CreateRes
                 LinkToUrl = request.LinkToUrl
             };
 
-            db.Add(resource);
+            db.Resources.Add(resource);
 
             await db.SaveChangesAsync(cancellationToken);
 

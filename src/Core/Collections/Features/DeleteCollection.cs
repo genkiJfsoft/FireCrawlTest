@@ -26,7 +26,7 @@ public record DeleteCollection : IRequest<Result>
     }
 }
 
-internal class DeleteCollectionHandler(DataContext db) : IRequestHandler<DeleteCollection, Result>
+internal class DeleteCollectionHandler(IDataContext db) : IRequestHandler<DeleteCollection, Result>
 {
     public async Task<Result> Handle(DeleteCollection request, CancellationToken cancellationToken)
     {

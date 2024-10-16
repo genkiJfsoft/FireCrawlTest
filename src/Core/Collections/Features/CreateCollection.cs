@@ -13,7 +13,7 @@ public record CreateCollection : IRequest<Result>
     public string Description { get; init; } = string.Empty;
 }
 
-internal class CreateCollectionHandler(DataContext db) : IRequestHandler<CreateCollection, Result>
+internal class CreateCollectionHandler(IDataContext db) : IRequestHandler<CreateCollection, Result>
 {
     public async Task<Result> Handle(CreateCollection request, CancellationToken cancellationToken)
     {
@@ -21,7 +21,7 @@ internal class CreateCollectionHandler(DataContext db) : IRequestHandler<CreateC
 
         var collection = new Collection { Title = request.Title, Description = request.Description };
 
-        db.Add(collection);
+        db.Collections.Add(collection);
 
         await db.SaveChangesAsync(cancellationToken);
 
