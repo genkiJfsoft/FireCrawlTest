@@ -32,9 +32,12 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Nanoid" />
+    <PackageReference Include="PuppeteerSharp" />
+    <PackageReference Include="Scriban" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Common\Assets\*.htm" />
     <EmbeddedResource Include="Enquiries\Assets\EnquiryMailTemplate.htm" />
   </ItemGroup>
 

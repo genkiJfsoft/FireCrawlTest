@@ -28,6 +28,8 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.5" />
     <PackageVersion Include="Nanoid" Version="3.1.0" />
+    <PackageVersion Include="PuppeteerSharp" Version="20.0.2" />
+    <PackageVersion Include="Scriban" Version="5.10.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="8.0.2" />
   </ItemGroup>
 </Project>

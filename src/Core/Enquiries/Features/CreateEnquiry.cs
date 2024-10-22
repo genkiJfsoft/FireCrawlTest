@@ -19,7 +19,7 @@ internal class CreateEnquiryHandler(IMailer mailer) : IRequestHandler<CreateEnqu
     {
         try
         {
-            var bodyHtml = AssetsHelper.ReadAsString("Enquiries/Assets/EnquiryMailTemplate.htm");
+            var bodyHtml = await AssetsHelper.ReadEmbeddedTextFileAsync("Enquiries/Assets/EnquiryMailTemplate.htm");
 
             var message = new MailerMessage
             {

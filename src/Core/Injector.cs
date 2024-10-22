@@ -3,7 +3,9 @@ using Core.Common.Data;
 using Core.Common.Exceptions;
 using Core.Common.Mailer;
 using Core.Common.Mediator;
+using Core.Common.Pdf;
 using Core.Common.Security;
+using Core.Common.FileProviders;
 using Core.Identity.Data;
 using Core.Identity.Services;
 using MediatR;
@@ -28,10 +30,11 @@ public static class Injector
     public static IServiceCollection AddApplicationCore(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
         // Register Providers
-
+        services.AddSingleton<PublicStorageProvider>();
         services.AddSingleton(TimeProvider.System);
         services.AddDataProvider(configuration, isDevelopment);
         services.AddScoped<IMailer, Mailer>();
+        services.AddScoped<IPdfConverter, PdfConverter>();
 
         services.AddIdentityAuth();
 
@@ -56,7 +59,8 @@ public static class Injector
 
         services.AddScoped<ISaveChangesInterceptor, TimestampableDataInterceptor>();
 
-        services.AddDbContext<DataContext>((sp, options) => {
+        services.AddDbContext<DataContext>((sp, options) =>
+        {
             options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
             options.UseSqlServer(connectionString);
 

@@ -1,5 +1,6 @@
 using Core;
 using Core.Common.Data;
+using Core.Common.FileProviders;
 using Core.Common.Security;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -88,6 +89,9 @@ try
     app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
     app.UseStaticFiles();
     app.UseAntiforgery();
+
+    var publicStorage = app.Services.GetRequiredService<PublicStorageProvider>();
+    app.UseStaticFiles(publicStorage.StaticFileOptions);
 
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode();

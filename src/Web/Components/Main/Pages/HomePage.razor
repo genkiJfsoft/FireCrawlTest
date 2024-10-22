@@ -1,8 +1,10 @@
 ﻿@page "/"
+@using Core.Common.Features
 @using Core.Identity.Data
 @using Web.Components.Account
 
 @inject IStringLocalizer<HomePage> L
+@inject NavigationManager NavigationManager
 
 <PageTitle>Home</PageTitle>
 
@@ -15,6 +17,17 @@
                 <p>You have the 'Administrator' role.</p>
             </AuthorizeView>
 
+            <div class="mb-3">
+                @if (!string.IsNullOrEmpty(greetingsPdfPath))
+                {
+                    <Button Type="ButtonType.Link" Color="ButtonColor.Secondary" To="@greetingsPdfPath" Target="Target.Blank">Download Greetings PDF!</Button>
+                }
+                else
+                {
+                    <Button @onclick="OnGreetingsClick" Color="ButtonColor.Secondary">Greetings!</Button>
+                }
+            </div>
+
             <Button Type="ButtonType.Link" To="/Portal/Dashboard" Color="ButtonColor.Primary">Dashboard</Button>
         </Authorized>
         <NotAuthorized>
@@ -22,3 +35,21 @@
         </NotAuthorized>
     </AuthorizeView>
 </div>
+
+@code {
+    string greetingsPdfPath = "";
+
+    public async Task OnGreetingsClick()
+    {
+        PreloadService.Show();
+
+        var result = await Mediator.Send(new GetGreetingsPdf());
+
+        if (result.IsSuccess)
+        {
+            greetingsPdfPath = result.Value.RequestPath;
+        }
+
+        PreloadService.Hide();
+    }
+}
