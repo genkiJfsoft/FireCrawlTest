@@ -1,0 +1,150 @@
+﻿@inject IFirecrawlService FirecrawlClient
+@using Microsoft.AspNetCore.Html
+@using Markdig
+@using System.Text.RegularExpressions
+
+<h3>Web Scraping with Firecrawl API</h3>
+
+<div>
+    <label for="urlInput">Website URL:</label>
+    <input id="urlInput" @bind="url" placeholder="Enter a URL" style="width: 300px;" />
+
+    <label for="keywordsInput" style="margin-left: 10px;">Keywords (comma-separated):</label>
+    <input id="keywordsInput" @bind="keywordsInput" placeholder="Enter keywords" style="width: 300px;" />
+
+    <button @onclick="CallFirecrawl" class="btn btn-primary" style="margin-left: 10px;">Submit</button>
+</div>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (filteredItems != null && filteredItems.Any())
+{
+    <h4>Filtered Items:</h4>
+    <ul>
+        @foreach (var item in filteredItems)
+        {
+            <li>
+                <h5>Title: @item.Title</h5>
+                <p>Body: @item.Body</p>
+                <p>Link: <a href="@item.Link" target="_blank">@item.Link</a></p>
+            </li>
+        }
+    </ul>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color: red;">@errorMessage</p>
+}
+else
+{
+    <p>No items match the keywords.</p>
+}
+
+@code {
+    private string? url;
+    private string? keywordsInput;
+    private List<ScrapedItem>? filteredItems;
+    private string? errorMessage;
+    private bool isLoading = false;
+
+    private async Task CallFirecrawl()
+    {
+        try
+        {
+            isLoading = true;
+            filteredItems = null;
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                errorMessage = "Please enter a valid URL.";
+                return;
+            }
+
+            // Parse keywords
+            var keywords = keywordsInput?.Split(',')?.Select(k => k.Trim()).ToList();
+
+            // Configure scrape options
+            var scrapeOptions = new FirecrawlScrapeOptions
+                {
+                    Url = new Uri(url),
+                    Formats = ImmutableArray.Create(FirecrawlFormat.Html), // Scrape as HTML
+                    OnlyMainContent = true // Fetch main content only
+                };
+
+            // Call the Firecrawl API
+            var scrapeResult = await FirecrawlClient.ScrapeAsync(scrapeOptions);
+
+            if (scrapeResult.Success && scrapeResult.Data != null && !string.IsNullOrEmpty(scrapeResult.Data.Html))
+            {
+                var allItems = ExtractItemsFromHtml(scrapeResult.Data.Html);
+
+                // Filter items by keywords
+                if (keywords != null && keywords.Any())
+                {
+                    filteredItems = allItems
+                        .Where(item => keywords.Any(keyword =>
+                            item.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                            item.Body.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+                        .ToList();
+                }
+                else
+                {
+                    filteredItems = allItems; // No filtering if no keywords are provided
+                }
+            }
+            else
+            {
+                errorMessage = "Failed to scrape the content or no data returned.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private List<ScrapedItem> ExtractItemsFromHtml(string htmlContent)
+    {
+        var items = new List<ScrapedItem>();
+
+        // Extract Titles using regex
+        var titleMatches = Regex.Matches(htmlContent, @"<h\d.*?>(.*?)<\/h\d>", RegexOptions.IgnoreCase);
+        var bodyMatches = Regex.Matches(htmlContent, @"<p.*?>(.*?)<\/p>", RegexOptions.IgnoreCase);
+        var linkMatches = Regex.Matches(htmlContent, @"<a\s+(?:[^>]*?\s+)?href=['""](https?:\/\/[^'""]+)['""]", RegexOptions.IgnoreCase);
+
+        for (int i = 0; i < titleMatches.Count; i++)
+        {
+            string title = titleMatches[i].Groups[1].Value;
+            string body = i < bodyMatches.Count ? bodyMatches[i].Groups[1].Value : "";
+            string link = i < linkMatches.Count ? linkMatches[i].Groups[1].Value : "";
+
+            items.Add(new ScrapedItem
+                {
+                    Title = StripHtml(title),
+                    Body = StripHtml(body),
+                    Link = link
+                });
+        }
+
+        return items;
+    }
+
+    private string StripHtml(string input)
+    {
+        return Regex.Replace(input, "<.*?>", string.Empty);
+    }
+
+    private class ScrapedItem
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public string Link { get; set; } = string.Empty;
+    }
+}

@@ -11,6 +11,9 @@
     <PackageReference Include="Ardalis.Result" />
     <PackageReference Include="Ardalis.Result.AspNetCore" />
     <PackageReference Include="Blazor.Bootstrap" />
+    <PackageReference Include="firecrawl-dotnet" />
+    <PackageReference Include="firecrawl-dotnet-dependencyinjection" />
+    <PackageReference Include="Markdig" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" />

@@ -17,7 +17,14 @@
 @using Web.Components
 @using Web.Components.Shared
 @using Web.Services
+@using Firecrawl
+@using System.Collections.Immutable
+@using Microsoft.AspNetCore.Html;
+@using Markdig
 
+@inject WebScrapingService WebScrapingService
 @inject IScopedMediator Mediator
 @inject PreloadService PreloadService
 @inject ToastService ToastService
+@inject HttpClient Http
+@inject IFirecrawlService FirecrawlClient

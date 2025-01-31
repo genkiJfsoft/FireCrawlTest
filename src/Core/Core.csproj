@@ -16,6 +16,7 @@
     <PackageReference Include="Ardalis.GuardClauses" />
     <PackageReference Include="Ardalis.Result" />
     <PackageReference Include="Mailkit" />
+    <PackageReference Include="Markdig" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.AspNetCore.Authorization" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" />

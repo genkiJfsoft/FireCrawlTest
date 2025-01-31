@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@* @page "/" *@
 @using Core.Common.Features
 @using Core.Identity.Data
 @using Web.Components.Account
@@ -32,6 +32,8 @@
         </Authorized>
         <NotAuthorized>
             <h1>@L["Welcome"]</h1>
+
+
         </NotAuthorized>
     </AuthorizeView>
 </div>
@@ -52,4 +54,6 @@
 
         PreloadService.Hide();
     }
+
+
 }
