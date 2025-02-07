@@ -1,108 +1,287 @@
-﻿@inject IFirecrawlService FirecrawlClient
-@using Microsoft.AspNetCore.Html
-@using Markdig
-@using System.Text.RegularExpressions
+﻿
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using System.Text
+@using Microsoft.AspNetCore.Components
+@inject IJSRuntime JS
 
-<h3>Web Scraping with Firecrawl API</h3>
+<h3>🔍 Firecrawl Playground Extract</h3>
+
 
 <div>
-    <label for="urlInput">Website URL:</label>
-    <input id="urlInput" @bind="url" placeholder="Enter a URL" style="width: 300px;" />
+    <label for="keywordInput">🔑 Keywords:</label>
+    <div class="tag-input">
+        <input id="keywordInput" @bind="newKeyword" @onkeypress="HandleKeywordKeyPress" placeholder="e.g., concerts, music, 2025" style="width: 300px;" />
+        <div class="tags">
+            @foreach (var keyword in keywordList)
+            {
+                <span class="tag">
+                    @keyword
+                    <button type="button" class="remove-tag" @onclick="() => RemoveKeyword(keyword)">✖</button>
+                </span>
+            }
+        </div>
+    </div>
 
-    <label for="keywordsInput" style="margin-left: 10px;">Keywords (comma-separated):</label>
-    <input id="keywordsInput" @bind="keywordsInput" placeholder="Enter keywords" style="width: 300px;" />
+    <label for="urlInput">🌐 Website URL:</label>
+    <div class="tag-input">
+        <input id="urlInput" @bind="newUrl" @onkeypress="HandleUrlKeyPress" placeholder="e.g., https://example1.com/*, https://example.com/*" style="width: 300px;" />
+        <div class="tags">
+            @foreach (var url in urlList)
+            {
+                <span class="tag">
+                    @url
+                    <button type="button" class="remove-tag" @onclick="() => RemoveUrl(url)">✖</button>
+                </span>
+            }
+        </div>
+    </div>
 
-    <button @onclick="CallFirecrawl" class="btn btn-primary" style="margin-left: 10px;">Submit</button>
+    <button @onclick="RunExtraction" class="btn btn-primary" style="margin-top: 10px;">🚀 Run</button>
+</div>
+
+
+<h4>Test GET API</h4>
+<div>
+    <label for="jobIdInput">🆔 Job ID:</label>
+    <input id="jobIdInput" @bind="testJobId" placeholder="Enter Job ID" style="width: 300px;" />
+
+    <button @onclick="TestGetApi" class="btn btn-secondary" style="margin-top: 10px;">🔍 Test GET</button>
 </div>
 
 @if (isLoading)
 {
-    <p>Loading...</p>
+    
+
+
+
 }
-else if (filteredItems != null && filteredItems.Any())
+else if (extractedData?.data?.pages != null && extractedData.data.pages.Count > 0)
 {
-    <h4>Filtered Items:</h4>
-    <ul>
-        @foreach (var item in filteredItems)
-        {
-            <li>
-                <h5>Title: @item.Title</h5>
-                <p>Body: @item.Body</p>
-                <p>Link: <a href="@item.Link" target="_blank">@item.Link</a></p>
-            </li>
-        }
-    </ul>
-}
-else if (!string.IsNullOrEmpty(errorMessage))
-{
-    <p style="color: red;">@errorMessage</p>
-}
-else
-{
-    <p>No items match the keywords.</p>
-}
+    <h4>📊 Extracted Data</h4>
 
-@code {
-    private string? url;
-    private string? keywordsInput;
-    private List<ScrapedItem>? filteredItems;
-    private string? errorMessage;
-    private bool isLoading = false;
+    <Grid TItem="Page"
+          Class="table table-hover table-bordered table-striped"
+          DataProvider="ExtractedDataProvider">
 
-    private async Task CallFirecrawl()
-    {
-        try
-        {
-            isLoading = true;
-            filteredItems = null;
-            errorMessage = null;
+        <GridColumns>
+            <GridColumn TItem="Page" HeaderText="Description">
+                @context.title
+            </GridColumn>
 
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                errorMessage = "Please enter a valid URL.";
-                return;
-            }
-
-            // Parse keywords
-            var keywords = keywordsInput?.Split(',')?.Select(k => k.Trim()).ToList();
-
-            // Configure scrape options
-            var scrapeOptions = new FirecrawlScrapeOptions
+            <GridColumn TItem="Page" HeaderText="From" >
+                <div>
+                    <span>Website: </span>
+                    <a href="@context.url" target="_blank">
+                        @GetDomainName(context.url)
+                    </a>
+                </div>
+                
+            </GridColumn>
+            <GridColumn TItem="Page" HeaderText="🎵 Mentions">
+                @if (context.mentions != null && context.mentions.Count > 0)
                 {
-                    Url = new Uri(url),
-                    Formats = ImmutableArray.Create(FirecrawlFormat.Html), // Scrape as HTML
-                    OnlyMainContent = true // Fetch main content only
-                };
-
-            // Call the Firecrawl API
-            var scrapeResult = await FirecrawlClient.ScrapeAsync(scrapeOptions);
-
-            if (scrapeResult.Success && scrapeResult.Data != null && !string.IsNullOrEmpty(scrapeResult.Data.Html))
-            {
-                var allItems = ExtractItemsFromHtml(scrapeResult.Data.Html);
-
-                // Filter items by keywords
-                if (keywords != null && keywords.Any())
-                {
-                    filteredItems = allItems
-                        .Where(item => keywords.Any(keyword =>
-                            item.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                            item.Body.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
-                        .ToList();
+                    <ul>
+                        @foreach (var mention in context.mentions)
+                        {
+                            <li>@mention</li>
+                        }
+                    </ul>
                 }
                 else
                 {
-                    filteredItems = allItems; // No filtering if no keywords are provided
+                    <span>No mentions found</span>
                 }
-            }
-            else
+            </GridColumn>
+
+
+        </GridColumns>
+    </Grid>
+
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color: red;">❌ @errorMessage</p>
+}
+else
+{
+    <p>No extracted data available.</p>
+}
+
+@code {
+    // private string? keywords;
+    // private string? url;
+    private Root? extractedData;
+    private string? errorMessage;
+    private bool isLoading = false;
+    private string? testJobId = "c8b3dc18-2bfa-4a38-a67b-744ff1d0a25d"; // Input for Job ID
+    private string? rawJsonResponse; // For displaying raw JSON
+    private readonly string firecrawlApiKey = "fc-ab100e2834264b1788479ada7d3f2e25"; // Firecrawl API key
+    private readonly string firecrawlExtractEndpoint = "https://api.firecrawl.dev/v1/extract/";
+    private string newKeyword = "";
+    private string newUrl = "";
+    private List<string> keywordList = new();
+    private List<string> urlList = new();
+
+    private void HandleKeywordKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newKeyword))
+        {
+            if (!keywordList.Contains(newKeyword.Trim()))
             {
-                errorMessage = "Failed to scrape the content or no data returned.";
+                keywordList.Add(newKeyword.Trim());
+            }
+            newKeyword = "";
+        }
+    }
+
+    private void HandleUrlKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newUrl))
+        {
+            string formattedUrl = newUrl.Trim();
+            if (!formattedUrl.EndsWith("/*"))
+            {
+                formattedUrl += "/*"; // Ensure /* is added
+            }
+            if (!urlList.Contains(formattedUrl))
+            {
+                urlList.Add(formattedUrl);
+            }
+            newUrl = "";
+        }
+    }
+    private void RemoveKeyword(string keyword)
+    {
+        keywordList.Remove(keyword);
+    }
+
+    private void RemoveUrl(string url)
+    {
+        urlList.Remove(url);
+    }
+
+
+    private async Task RunExtraction()
+    {
+        string keywords = string.Join(", ", keywordList); // Convert keywords into comma-separated string
+        string[] urls = urlList.ToArray(); // Convert URLs into an array
+        try
+        {
+            isLoading = true;
+            extractedData = null;
+            errorMessage = null;
+
+            // Validate input fields
+            if (string.IsNullOrWhiteSpace(keywords))
+            {
+                errorMessage = "⚠️ Please provide both keywords and a URL.";
+                return;
+            }
+
+
+            if (urls.Length == 0 || string.IsNullOrWhiteSpace(keywords))
+            {
+                Console.WriteLine("⚠️ Please provide both keywords and a URL.");
+                return;
+            }
+
+      
+
+            // Construct prompt and request schema
+            string prompt = $"Find all pages that mention {keywords}. Capture the URL and title of each page and list the specific mentions found on that page.";
+            var schema = new
+            {
+                type = "object",
+                properties = new
+                {
+                    pages = new
+                    {
+                        type = "array",
+                        items = new
+                        {
+                            type = "object",
+                            properties = new
+                            {
+                                title = new { type = "string" },
+                                url = new { type = "string" },
+                                mentions = new
+                                {
+                                    type = "array",
+                                    items = new { type = "string" }
+                                }
+                            },
+                            required = new[] { "title", "url", "mentions" }
+                        }
+                    }
+                },
+                required = new[] { "pages" }
+            };
+
+            var requestBody = new { urls=urls, prompt, enableWebSearch = true, schema };
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            Http.DefaultRequestHeaders.Clear();
+            Http.DefaultRequestHeaders.Add("Authorization", $"Bearer {firecrawlApiKey}");
+
+            // Send POST request
+            var postResponse = await Http.PostAsync(firecrawlExtractEndpoint, content);
+            var postContent = await postResponse.Content.ReadAsStringAsync();
+
+            if (!postResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"❌ API Request Failed: {postResponse.ReasonPhrase}\n{postContent}";
+                return;
+            }
+
+            var postResult = JsonSerializer.Deserialize<ExtractPostResponse>(postContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (postResult?.Id == null)
+            {
+                errorMessage = "❌ Failed to retrieve the job ID.";
+                return;
+            }
+
+            string jobId = postResult.Id;
+
+            // Poll the GET endpoint until status is "completed"
+            while (true)
+            {
+                var getResponse = await Http.GetAsync($"{firecrawlExtractEndpoint}{jobId}");
+                var getContent = await getResponse.Content.ReadAsStringAsync();
+
+                // Log raw JSON for debugging
+                Console.WriteLine($"Raw JSON Response: {getContent}");
+
+                if (!getResponse.IsSuccessStatusCode)
+                {
+                    errorMessage = $"❌ Failed to retrieve results: {getResponse.ReasonPhrase}\n{getContent}";
+                    return;
+                }
+
+                // Parse only the status field first
+                using var doc = JsonDocument.Parse(getContent);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("status", out var statusProperty) && statusProperty.GetString() == "completed")
+                {
+                    // Deserialize the full response only when status is "completed"
+                    extractedData = JsonSerializer.Deserialize<Root>(getContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (extractedData?.data?.pages == null || extractedData.data.pages.Count == 0)
+                    {
+                        errorMessage = "⚠️ No pages found in the response.";
+                    }
+                    return;
+                }
+
+                // If still processing, wait for 3 seconds and retry
+                await Task.Delay(3000);
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred: {ex.Message}";
+            errorMessage = $"❌ Error: {ex.Message}";
         }
         finally
         {
@@ -110,41 +289,104 @@ else
         }
     }
 
-    private List<ScrapedItem> ExtractItemsFromHtml(string htmlContent)
+
+    private async Task TestGetApi()
     {
-        var items = new List<ScrapedItem>();
-
-        // Extract Titles using regex
-        var titleMatches = Regex.Matches(htmlContent, @"<h\d.*?>(.*?)<\/h\d>", RegexOptions.IgnoreCase);
-        var bodyMatches = Regex.Matches(htmlContent, @"<p.*?>(.*?)<\/p>", RegexOptions.IgnoreCase);
-        var linkMatches = Regex.Matches(htmlContent, @"<a\s+(?:[^>]*?\s+)?href=['""](https?:\/\/[^'""]+)['""]", RegexOptions.IgnoreCase);
-
-        for (int i = 0; i < titleMatches.Count; i++)
+        try
         {
-            string title = titleMatches[i].Groups[1].Value;
-            string body = i < bodyMatches.Count ? bodyMatches[i].Groups[1].Value : "";
-            string link = i < linkMatches.Count ? linkMatches[i].Groups[1].Value : "";
+            if (string.IsNullOrWhiteSpace(testJobId))
+            {
+                errorMessage = "⚠️ Please enter a Job ID.";
+                return;
+            }
 
-            items.Add(new ScrapedItem
+            isLoading = true;
+            rawJsonResponse = null;
+            extractedData = null;
+            errorMessage = null;
+
+            Http.DefaultRequestHeaders.Clear();
+            Http.DefaultRequestHeaders.Add("Authorization", $"Bearer {firecrawlApiKey}");
+
+            var getResponse = await Http.GetAsync(firecrawlExtractEndpoint + testJobId);
+            var getContent = await getResponse.Content.ReadAsStringAsync();
+
+            if (!getResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"❌ Failed to retrieve results: {getResponse.ReasonPhrase}\n{getContent}";
+                return;
+            }
+
+            rawJsonResponse = getContent; // Display raw JSON response
+            Console.WriteLine($"Raw JSON: {getContent}");
+            // Attempt to deserialize into C# objects
+            extractedData = JsonSerializer.Deserialize<Root>(getContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (extractedData?.data?.pages == null || extractedData.data.pages.Count == 0)
+            {
+                errorMessage = "⚠️ No pages found in the response.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"❌ Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetDomainName(string? url) // Allow nullable string
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return "Invalid URL"; // Handle null or empty case
+
+        try
+        {
+            var uri = new Uri(url);
+            return uri.Host.Replace("www.", ""); // Remove 'www.' if present
+        }
+        catch
+        {
+            return url; // Return original URL if parsing fails
+        }
+    }
+    public class Data
+    {
+        public List<Page>? pages { get; set; } // ✅ Nullable (API may return no pages)
+
+
+    }
+
+    public class Page
+    {
+        public string? url { get; set; } // ✅ Nullable (avoid null exception)
+        public string? title { get; set; } // ✅ Nullable
+        public List<string>? mentions { get; set; } // ✅ Nullable
+    }
+
+    public class Root
+    {
+        public bool success { get; set; }
+        public Data? data { get; set; } // ✅ Nullable (API may return empty data)
+        public string? status { get; set; } // ✅ Nullable
+        public DateTime expiresAt { get; set; }
+    }
+
+    private class ExtractPostResponse { public string? Id { get; set; } }
+
+    private async Task<GridDataProviderResult<Page>> ExtractedDataProvider(GridDataProviderRequest<Page> request)
+    {
+        if (extractedData?.data?.pages == null || extractedData.data.pages.Count == 0)
+        {
+            return await Task.FromResult(new GridDataProviderResult<Page>
                 {
-                    Title = StripHtml(title),
-                    Body = StripHtml(body),
-                    Link = link
+                    TotalCount = 0,
+                    Data = new List<Page>()
                 });
         }
 
-        return items;
-    }
-
-    private string StripHtml(string input)
-    {
-        return Regex.Replace(input, "<.*?>", string.Empty);
-    }
-
-    private class ScrapedItem
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Body { get; set; } = string.Empty;
-        public string Link { get; set; } = string.Empty;
+        return await Task.FromResult(request.ApplyTo(extractedData.data.pages));
     }
 }

@@ -1,14 +1,318 @@
 ﻿@page "/"
-@inject WebScrapingService WebScrapingService
+
+<!-- Website Modal -->
+<ModalComponent @ref="websiteModal" Title="Website Configuration">
+    <WebsiteModalContent @bind-WebsiteList="urlList" OnRunExtraction="RunExtraction" />
+</ModalComponent>
+
+<!-- Keyword Modal -->
+<ModalComponent @ref="keywordModal" Title="Keyword Configuration">
+    <KeywordModalContent @bind-KeywordList="keywordList" OnRunExtraction="RunExtraction" />
+</ModalComponent>
+
+<!-- Buttons to Open Modals -->
+<div class="d-flex justify-content-center mt-4 gap-3">
+    <Button Color="ButtonColor.Primary" Class="px-4 py-2" @onclick="ShowWebsiteModal">
+        <i class="bi bi-globe"></i> Websites
+    </Button>
+    <Button Color="ButtonColor.Secondary" Class="px-4 py-2" @onclick="ShowKeywordModal">
+        <i class="bi bi-tags"></i>  Keywords
+    </Button>
+</div>
 
 
-<FireCrawlTest/>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <p>⏳ Extracting data... Please wait...  </p>
+    </div>
+    <div class="d-flex justify-content-center">
+        <Spinner Type="SpinnerType.Dots" Class="justify-content-center" Color="SpinnerColor.Warning" />
+    </div>
 
 
-@* <JsonPlaceholder/>
-<JsonPhotos /> *@
+}
+else if (extractedData?.data?.pages != null && extractedData.data.pages.Count > 0)
+{
+    <Grid TItem="Page"
+    Class="table table-hover table-bordered table-striped"
+    DataProvider="ExtractedDataProvider">
+
+        <GridColumns>
+            <GridColumn TItem="Page" HeaderText="Description">
+                @context.title
+            </GridColumn>
+
+            <GridColumn TItem="Page" HeaderText="From">
+                <div>
+                    <span>Website: </span>
+                    <a href="@context.url" target="_blank">
+                        @GetDomainName(context.url)
+                    </a>
+                </div>
+
+            </GridColumn>
+            <GridColumn TItem="Page" HeaderText="🎵 Mentions">
+                @if (context.mentions != null && context.mentions.Count > 0)
+                {
+                    <ul>
+                        @foreach (var mention in context.mentions)
+                        {
+                            <li>@mention</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <span>No mentions found</span>
+                }
+            </GridColumn>
+
+
+        </GridColumns>
+    </Grid>
+
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color: red;">❌ @errorMessage</p>
+}
+
+
 
 @code {
 
 
+
+    //Modal declarations
+    private ModalComponent? websiteModal;
+    private ModalComponent? keywordModal;
+
+    // Shared lists for website URLs and keywords
+    private List<string> urlList = new();
+    private List<string> keywordList = new();
+
+    private async Task ShowWebsiteModal() => await websiteModal?.ShowAsync()!;
+    private async Task ShowKeywordModal() => await keywordModal?.ShowAsync()!;
+
+
+    //FireCrawlAPI declarations
+    private Root? extractedData;
+    private string? errorMessage;
+    private bool isLoading = false;
+    private readonly string firecrawlApiKey = "fc-ab100e2834264b1788479ada7d3f2e25"; // Firecrawl API key
+    private readonly string firecrawlExtractEndpoint = "https://api.firecrawl.dev/v1/extract/";
+    private class ExtractPostResponse { public string? Id { get; set; } }
+    private async Task RunExtraction()
+    {
+        if (websiteModal != null){
+            await websiteModal.HideAsync();
+        }
+
+        if (keywordModal != null){
+            await keywordModal.HideAsync();      
+        }
+
+        string keywords = string.Join(", ", keywordList); // Convert keywords into comma-separated string
+        string[] urls = urlList.ToArray(); // Convert URLs into an array
+        try
+        {
+     
+
+            isLoading = true;
+            extractedData = null;
+            errorMessage = null;
+
+            if(isLoading){
+                StateHasChanged();
+            }
+
+            if (keywords.Length==0 && urls.Length == 0)
+            {
+                errorMessage = "⚠️ Please provide at least one keyword and a URL.";
+                StateHasChanged();
+                return;
+            }
+                    // Validate input fields
+            if (keywords.Length == 0)
+            {
+                errorMessage = "⚠️ Please provide at least one keyword.";
+                StateHasChanged(); // Ensure modal UI updates before closing
+                return;
+            }
+
+
+            if (urls.Length == 0 || string.IsNullOrWhiteSpace(keywords))
+            {
+                errorMessage = "⚠️ Please provide at least one url.";
+                StateHasChanged(); // Ensure modal UI updates before closing
+                return;
+            }
+
+
+
+            // Construct prompt and request schema
+            string prompt = $"Find all pages that mention {keywords}. Capture the URL and title of each page and list the specific mentions found on that page.";
+            var schema = new
+            {
+                type = "object",
+                properties = new
+                {
+                    pages = new
+                    {
+                        type = "array",
+                        items = new
+                        {
+                            type = "object",
+                            properties = new
+                            {
+                                title = new { type = "string" },
+                                url = new { type = "string" },
+                                mentions = new
+                                {
+                                    type = "array",
+                                    items = new { type = "string" }
+                                }
+                            },
+                            required = new[] { "title", "url", "mentions" }
+                        }
+                    }
+                },
+                required = new[] { "pages" }
+            };
+
+            var requestBody = new { urls = urls, prompt, enableWebSearch = true, schema };
+            var json = JsonSerializer.Serialize(requestBody);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            Http.DefaultRequestHeaders.Clear();
+            Http.DefaultRequestHeaders.Add("Authorization", $"Bearer {firecrawlApiKey}");
+
+            // Send POST request
+            var postResponse = await Http.PostAsync(firecrawlExtractEndpoint, content);
+            var postContent = await postResponse.Content.ReadAsStringAsync();
+
+            if (!postResponse.IsSuccessStatusCode)
+            {
+                errorMessage = $"❌ API Request Failed: {postResponse.ReasonPhrase}\n{postContent}";
+                StateHasChanged(); // Ensure modal UI updates before closing
+                return;
+            }
+
+            var postResult = JsonSerializer.Deserialize<ExtractPostResponse>(postContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (postResult?.Id == null)
+            {
+                errorMessage = "❌ Failed to retrieve the job ID.";
+                StateHasChanged(); // Ensure modal UI updates before closing
+                return;
+            }
+
+            string jobId = postResult.Id;
+
+            // Poll the GET endpoint until status is "completed"
+            while (true)
+            {
+                var getResponse = await Http.GetAsync($"{firecrawlExtractEndpoint}{jobId}");
+                var getContent = await getResponse.Content.ReadAsStringAsync();
+
+                // Log raw JSON for debugging
+                Console.WriteLine($"Raw JSON Response: {getContent}");
+
+                if (!getResponse.IsSuccessStatusCode)
+                {
+                    errorMessage = $"❌ Failed to retrieve results: {getResponse.ReasonPhrase}\n{getContent}";
+                    StateHasChanged(); // Ensure modal UI updates before closing
+                    return;
+                }
+
+                // Parse only the status field first
+                using var doc = JsonDocument.Parse(getContent);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("status", out var statusProperty) && statusProperty.GetString() == "completed")
+                {
+                    // Deserialize the full response only when status is "completed"
+                    extractedData = JsonSerializer.Deserialize<Root>(getContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (extractedData?.data?.pages == null || extractedData.data.pages.Count == 0)
+                    {
+                        errorMessage = "⚠️ No pages found in the response.";
+                    }
+                    StateHasChanged(); // Ensure modal UI updates before closing
+                    return;
+                }
+
+                // If still processing, wait for 3 seconds and retry
+                await Task.Delay(3000);
+            }
+        }
+        catch (Exception ex)
+        {
+            StateHasChanged(); // Ensure modal UI updates before closing
+            errorMessage = $"❌ Error: {ex.Message}";
+   
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged(); // Ensure modal UI updates before closing
+        }
+   
     }
+
+
+    public class Data
+    {
+        public List<Page>? pages { get; set; } // ✅ Nullable (API may return no pages)
+
+
+    }
+
+    public class Page
+    {
+        public string? url { get; set; } // ✅ Nullable (avoid null exception)
+        public string? title { get; set; } // ✅ Nullable
+        public List<string>? mentions { get; set; } // ✅ Nullable
+    }
+
+    public class Root
+    {
+        public bool success { get; set; }
+        public Data? data { get; set; } // ✅ Nullable (API may return empty data)
+        public string? status { get; set; } // ✅ Nullable
+        public DateTime expiresAt { get; set; }
+    }
+
+    private async Task<GridDataProviderResult<Page>> ExtractedDataProvider(GridDataProviderRequest<Page> request)
+    {
+        if (extractedData?.data?.pages == null || extractedData.data.pages.Count == 0)
+        {
+            return await Task.FromResult(new GridDataProviderResult<Page>
+                {
+                    TotalCount = 0,
+                    Data = new List<Page>()
+                });
+        }
+
+        return await Task.FromResult(request.ApplyTo(extractedData.data.pages));
+    }
+
+    private string GetDomainName(string? url) // Allow nullable string
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return "Invalid URL"; // Handle null or empty case
+
+        try
+        {
+            var uri = new Uri(url);
+            return uri.Host.Replace("www.", ""); // Remove 'www.' if present
+        }
+        catch
+        {
+            return url; // Return original URL if parsing fails
+        }
+    }
+
+
+}

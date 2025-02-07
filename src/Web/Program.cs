@@ -67,15 +67,14 @@ try
         options.FallBackToParentUICultures = true;
     });
     builder.Services.AddHttpClient(); // Add HttpClient
-    builder.Services.AddHttpClient<WebScrapingService>(); // Register HttpClient and ScrapingService
     builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
-    builder.Services.AddHttpClient<JsonPlaceholderService>();
-    builder.Services.AddFirecrawlHttpClient(options =>
-    {
-        options.BaseUrl = new Uri("https://api.firecrawl.dev/v1/"); // Replace with the correct API base URL
-        options.ApiKey = builder.Configuration["Firecrawl:ApiKey"];
-    });
+
+    //builder.Services.AddFirecrawlHttpClient(options =>
+    //{
+    //    options.BaseUrl = new Uri("https://api.firecrawl.dev/v1/"); // Replace with the correct API base URL
+    //    options.ApiKey = builder.Configuration["Firecrawl:ApiKey"];
+    //});
 
    
     var app = builder.Build();

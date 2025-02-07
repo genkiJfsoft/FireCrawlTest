@@ -1,0 +1,110 @@
+﻿<div>
+    <div class="d-flex align-items-center mb-3">
+        <label for="keywordInput" class="me-2">Keyword:</label>
+        <input id="keywordInput" @bind="newKeyword" placeholder="Enter or search keyword" class="form-control me-2" style="width: 50%;" />
+        <Button Color="ButtonColor.Primary" Class="me-2" @onclick="HandleRunExtraction">Search</Button>
+        <Button Color="ButtonColor.Success" @onclick="AddKeyword">Add</Button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (KeywordList.Count == 0)
+    {
+        <div class="alert alert-warning">No keywords added yet.</div>
+    }
+    else
+    {
+        <Grid @ref="grid"
+              TItem="string"
+              Class="table table-hover table-bordered table-striped mt-3"
+              Data="KeywordList">
+
+            <GridColumns>
+                <GridColumn TItem="string" HeaderText="Keyword">
+                    @context
+                </GridColumn>
+                <GridColumn TItem="string" HeaderText="Action" HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
+                    <Button Color="ButtonColor.Danger" Class="btn-sm" @onclick="() => RemoveKeyword(context)">
+                        <i class="bi bi-trash"></i>
+                    </Button>
+                </GridColumn>
+            </GridColumns>
+
+        </Grid>
+    }
+</div>
+
+@code {
+    private string newKeyword = "";
+    private string errorMessage = "";
+    Grid<string> grid = default!;
+
+    [Parameter]
+    public List<string> KeywordList { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<string>> KeywordListChanged { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnRunExtraction { get; set; } // Delegate for parent function
+
+    [CascadingParameter] public ModalComponent? ParentModal { get; set; } // Reference to the parent modal
+
+    private async Task HandleRunExtraction()
+    {
+        if (OnRunExtraction != null)
+        {
+            await OnRunExtraction.Invoke(); // Call the parent's function
+            StateHasChanged(); // Ensure modal UI updates before closing
+        }
+        else
+        {
+            Console.WriteLine("OnRunExtraction is not set.");
+        }
+    }
+
+    private async Task AddKeyword()
+    {
+        errorMessage = ""; // Reset error message
+
+        if (string.IsNullOrWhiteSpace(newKeyword))
+        {
+            errorMessage = "Keyword cannot be empty.";
+            return;
+        }
+
+        if (!IsValidKeyword(newKeyword))
+        {
+            errorMessage = "Invalid keyword format. Only alphabets and spaces are allowed.";
+            return;
+        }
+
+        if (KeywordList.Contains(newKeyword))
+        {
+            errorMessage = "This keyword is already added.";
+            return;
+        }
+
+        var keywords = KeywordList.GetRange(0, KeywordList.Count);
+        keywords.Add(newKeyword);
+        KeywordList = keywords;
+        await KeywordListChanged.InvokeAsync(KeywordList); // Notify parent
+        newKeyword = ""; // Clear input
+    }
+
+    private async Task RemoveKeyword(string keyword)
+    {
+        KeywordList.Remove(keyword);
+        await KeywordListChanged.InvokeAsync(KeywordList); // Notify parent
+        await grid.RefreshDataAsync();
+    }
+
+    private bool IsValidKeyword(string keyword)
+    {
+        // Only allow alphabets (A-Z, a-z) and spaces
+        return System.Text.RegularExpressions.Regex.IsMatch(keyword, @"^[a-zA-Z\s]+$");
+    }
+}

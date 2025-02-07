@@ -1,0 +1,32 @@
+﻿@using BlazorBootstrap
+
+<Modal @ref="modalInstance" Title="@Title" Size="ModalSize.Large">
+    <BodyTemplate>
+        <div class="p-3">
+            @ChildContent
+        </div>
+    </BodyTemplate>
+</Modal>
+
+@code {
+    private Modal modalInstance = default!;
+
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment ChildContent { get; set; } = default!;
+
+    public async Task ShowAsync()
+    { 
+        {
+            if (modalInstance != null)
+                await modalInstance.ShowAsync();
+        }
+    }
+
+    public async Task HideAsync()
+    {
+        {
+            if (modalInstance != null)
+                await modalInstance.HideAsync();
+        }
+    }
+}

@@ -38,6 +38,11 @@
     private string? username;
     private string? phoneNumber;
 
+    public Index()
+    {
+    }
+
+
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 

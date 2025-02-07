@@ -33,6 +33,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Nanoid" />
+    <PackageReference Include="OpenAI" />
     <PackageReference Include="PuppeteerSharp" />
     <PackageReference Include="Scriban" />
   </ItemGroup>

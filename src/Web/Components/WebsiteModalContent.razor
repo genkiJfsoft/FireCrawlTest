@@ -1,0 +1,119 @@
+﻿<div>
+    <div class="d-flex align-items-center mb-3">
+        <label for="websiteInput" class="me-2">Website URL:</label>
+        <input id="websiteInput" @bind="newWebsiteUrl" placeholder="Enter or search URL" class="form-control me-2" style="width: 50%;" />
+        <Button Color="ButtonColor.Primary" Class="me-2" @onclick="HandleRunExtraction">Search</Button>
+        <Button Color="ButtonColor.Success" @onclick="AddWebsite">Add</Button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (WebsiteList.Count == 0)
+    {
+        <div class="alert alert-warning">No websites added yet.</div>
+    }
+    else
+    {
+        <Grid @ref="grid"
+              TItem="string"
+              Class="table table-hover table-bordered table-striped mt-3"
+              Data="WebsiteList">
+
+            <GridColumns>
+                <GridColumn TItem="string" HeaderText="Website URL">
+                        <a href="@context" target="_blank" class="text-decoration-none">@context</a>
+                </GridColumn>
+                <GridColumn TItem="string" HeaderText="Action" HeaderTextAlignment="Alignment.Center" TextAlignment="Alignment.Center">
+                    <Button Color="ButtonColor.Danger" Class="btn-sm" @onclick="() => RemoveWebsite(context)">
+                        <i class="bi bi-trash"></i>
+                    </Button>
+                </GridColumn>
+            </GridColumns>
+
+        </Grid>
+    }
+</div>
+
+@code {
+    private string newWebsiteUrl = "";
+    Grid<string> grid = default!;
+    private string errorMessage = "";
+
+    [Parameter]
+    public List<string> WebsiteList { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<string>> WebsiteListChanged { get; set; }
+
+    [Parameter]
+    public Func<Task>? OnRunExtraction { get; set; } // Delegate for parent function
+
+    [CascadingParameter] public ModalComponent? ParentModal { get; set; } // Reference to the parent modal
+
+    private async Task HandleRunExtraction()
+    {
+        if (OnRunExtraction != null)
+        {
+            await OnRunExtraction.Invoke(); // Call the parent's function
+            StateHasChanged(); // Ensure modal UI updates before closing
+        }
+        else
+        {
+            Console.WriteLine("OnRunExtraction is not set.");
+        }
+    }
+
+    private async Task AddWebsite()
+    {
+        errorMessage = ""; // Clear previous errors
+
+        if (string.IsNullOrWhiteSpace(newWebsiteUrl))
+        {
+            errorMessage = "Enter an website's URL to add";
+            return;
+        }
+
+        if (!IsValidUrl(newWebsiteUrl))
+        {
+            errorMessage = "Invalid URL format. Ensure it starts with 'http://' or 'https://' and does not contain spaces.";
+            return;
+        }
+
+        if (!newWebsiteUrl.EndsWith("/*"))
+        {
+            newWebsiteUrl += "/*";
+        }
+
+        if (WebsiteList.Contains(newWebsiteUrl))
+        {
+            errorMessage = "This website is already added.";
+            return;
+        }
+
+        // Creates a shallow copy and updates the reference
+        var websites = WebsiteList.GetRange(0, WebsiteList.Count);
+        websites.Add(newWebsiteUrl);
+        WebsiteList = websites; // Assign new reference
+        newWebsiteUrl = ""; // Clear input
+        await WebsiteListChanged.InvokeAsync(WebsiteList); // Notify parent
+    }
+    private async Task RemoveWebsite(string url)
+    {
+        WebsiteList.Remove(url);
+        await WebsiteListChanged.InvokeAsync(WebsiteList); // Notify parent
+        await grid.RefreshDataAsync();
+    }
+
+    private bool IsValidUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uriResult))
+            return false;
+
+        return (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+    }
+ 
+
+}
